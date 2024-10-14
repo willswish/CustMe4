@@ -2,13 +2,21 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import apiService from '../services/apiService';
 import { useAuth } from '../context/AuthContext';
 
-// Define Personal Information interface
+interface ArtistProvider {
+  id: number;
+  name: string;
+  profilePicture: string | null;
+  roleName?: string; // Add roleName to identify the type of provider
+  bio?: string; // Add any other details you want to display
+}
+
 interface PersonalInformation {
   firstname: string;
   lastname: string;
   profilepicture: string | null;
   coverphoto: string | null;
   zipcode: string;
+  artistPrintingProviders?: ArtistProvider[]; 
 }
 
 // Define UserProfile interface
@@ -28,7 +36,10 @@ interface UserProfile {
 interface UserProfileContextProps {
   userProfile: UserProfile | null;
   fetchUserProfile: () => Promise<void>;
-  updateUserProfile: (updatedProfile: Partial<PersonalInformation>) => Promise<void>; // Add updateUserProfile
+  fetchUserProfileById: (userId: number) => Promise<UserProfile | null>; // New method to fetch a user profile by ID
+  updateUserProfile: (updatedProfile: Partial<PersonalInformation>) => Promise<void>;
+  artistAndPrintingProviders: UserProfile[] | null; // State for providers
+  fetchArtistAndPrintingProviders: () => Promise<void>; // Method to fetch providers
 }
 
 // Create UserProfileContext
@@ -36,7 +47,14 @@ const UserProfileContext = createContext<UserProfileContextProps | undefined>(un
 
 export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [artistAndPrintingProviders, setArtistAndPrintingProviders] = useState<UserProfile[] | null>(null); // State for providers
   const { user } = useAuth(); // Use the Auth context to get the current user
+
+  // Role mapping
+  const roleMapping: { [key: number]: string } = {
+    3: "Graphic Designer",
+    4: "Printing Provider"
+  };
 
   // Fetch user profile method
   const fetchUserProfile = useCallback(async () => {
@@ -54,16 +72,7 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
       console.log('Fetched UserProfile Data:', fetchedData);
 
       if (fetchedData && fetchedData.user) {
-        // Log personal information for debugging
-        console.log('Personal Information:', fetchedData.user.personal_information);
-
-        // Extracting the first store's location if available
         const location = fetchedData.user.stores.length > 0 ? fetchedData.user.stores[0].location : null;
-        if (location) {
-          console.log('User Location:', location);
-        } else {
-          console.warn('No location information available for user profile');
-        }
 
         const profileData: UserProfile = {
           id: fetchedData.user.id,
@@ -82,7 +91,6 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
         setUserProfile(profileData);
       } else {
-        console.warn('No personal information available for user profile');
         setUserProfile(null);
       }
     } catch (error) {
@@ -91,13 +99,47 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   }, [user]);
 
+  // New method to fetch user profile by ID
+  const fetchUserProfileById = useCallback(async (userId: number) => {
+    try {
+      const response = await apiService.get(`/provider/${userId}/profile`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+      const fetchedData = response.data;
+
+      // Debugging: Log the fetched data
+      console.log('Fetched User Profile by ID:', fetchedData);
+
+      if (fetchedData && fetchedData.user) {
+        const profileData: UserProfile = {
+          id: fetchedData.user.id,
+          username: fetchedData.user.username,
+          email: fetchedData.user.email,
+          verified: fetchedData.user.verified === 1,
+          personalInformation: {
+            firstname: fetchedData.user.personal_information.firstname,
+            lastname: fetchedData.user.personal_information.lastname,
+            profilepicture: fetchedData.user.personal_information.profilepicture || null,
+            coverphoto: fetchedData.user.personal_information.coverphoto || null,
+            zipcode: fetchedData.user.personal_information.zipcode,
+          },
+          location: null, // You can adjust this based on your response
+        };
+
+        return profileData; // Return the fetched profile
+      }
+    } catch (error) {
+      console.error('Failed to fetch user profile by ID:', error);
+    }
+    return null; // Return null if the fetch fails
+  }, []);
+
   // Update user profile method
   const updateUserProfile = useCallback(
     async (updatedProfile: Partial<PersonalInformation>) => {
       if (!user) return; // Ensure the user is authenticated
-  
-      // Debugging: Log the updated profile data before making the API request
-      console.log('Updating User Profile with data:', updatedProfile);
   
       try {
         const response = await apiService.put(`/users/${user.id}/profile`, updatedProfile, {
@@ -107,16 +149,14 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
         });
         console.log('Profile updated successfully:', response.data);
   
-        // Update local state with the new profile information
         setUserProfile((prevProfile) => {
           if (prevProfile) {
-            // Handle potential undefined values by ensuring defaults
             return {
               ...prevProfile,
               personalInformation: {
                 ...prevProfile.personalInformation,
                 ...updatedProfile,
-              } as PersonalInformation, // Assert that this will still match PersonalInformation structure
+              } as PersonalInformation, 
             };
           }
           return prevProfile;
@@ -127,14 +167,40 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
     },
     [user]
   );
-  
+
+  // Fetch Artist and Printing Providers
+  const fetchArtistAndPrintingProviders = useCallback(async () => {
+    try {
+      const response = await apiService.get('/users/artist-and-printing-provider', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+        },
+      });
+      const providersData = response.data.users; // Adjust based on your API response structure
+
+      // Map roles to providers
+      const enrichedProviders = providersData.map((provider) => ({
+        ...provider,
+        roleName: roleMapping[provider.role_id] || 'Unknown Role', // Set role name based on ID
+      }));
+
+      // Debugging: Log the fetched artist and printing providers
+      console.log('Fetched Artist and Printing Providers:', enrichedProviders);
+
+      setArtistAndPrintingProviders(enrichedProviders);
+    } catch (error) {
+      console.error('Failed to fetch artist and printing providers:', error);
+      setArtistAndPrintingProviders(null);
+    }
+  }, []);
 
   useEffect(() => {
     fetchUserProfile(); // Fetch the user profile when the component mounts
-  }, [fetchUserProfile]);
+    fetchArtistAndPrintingProviders(); // Fetch artist and printing providers on mount
+  }, [fetchUserProfile, fetchArtistAndPrintingProviders]);
 
   return (
-    <UserProfileContext.Provider value={{ userProfile, fetchUserProfile, updateUserProfile }}>
+    <UserProfileContext.Provider value={{ userProfile, fetchUserProfile, fetchUserProfileById, updateUserProfile, artistAndPrintingProviders, fetchArtistAndPrintingProviders }}>
       {children}
     </UserProfileContext.Provider>
   );

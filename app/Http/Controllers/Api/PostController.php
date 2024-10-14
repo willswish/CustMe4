@@ -80,62 +80,62 @@ class PostController extends Controller
     }
 
     public function updatePost(Request $request, $postId)
-{
-    // Log the raw request content for debugging
-    Log::info('Raw request content:', ['content' => file_get_contents('php://input')]);
+    {
+        // Log the raw request content for debugging
+        Log::info('Raw request content:', ['content' => file_get_contents('php://input')]);
 
-    // Log the request headers for debugging
-    Log::info('Request headers:', $request->headers->all());
+        // Log the request headers for debugging
+        Log::info('Request headers:', $request->headers->all());
 
-    // Log the request data for debugging
-    Log::info('Request data:', $request->all());
+        // Log the request data for debugging
+        Log::info('Request data:', $request->all());
 
-    $request->validate([
-        'title' => 'required|string|max:255',
-        'content' => 'required|string',
-        'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        'existingImages' => 'array',
-    ]);
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'existingImages' => 'array',
+        ]);
 
-    try {
-        $post = Post::findOrFail($postId);
+        try {
+            $post = Post::findOrFail($postId);
 
-        if ($post->user_id !== Auth::id()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
-        $post->title = $request->title;
-        $post->content = $request->content;
-        $post->save();
-
-        $existingImages = $request->input('existingImages', []);
-        $currentImages = $post->images->pluck('image_id')->toArray();
-
-        $imagesToDelete = array_diff($currentImages, $existingImages);
-        foreach ($imagesToDelete as $imageId) {
-            $image = Image::findOrFail($imageId);
-            Storage::disk('public')->delete($image->image_path);
-            $image->delete();
-        }
-
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $imagePath = $image->store('images', 'public');
-                Image::create([
-                    'image_path' => $imagePath,
-                    'post_id' => $post->post_id,
-                ]);
+            if ($post->user_id !== Auth::id()) {
+                return response()->json(['error' => 'Unauthorized'], 403);
             }
+
+            $post->title = $request->title;
+            $post->content = $request->content;
+            $post->save();
+
+            $existingImages = $request->input('existingImages', []);
+            $currentImages = $post->images->pluck('image_id')->toArray();
+
+            $imagesToDelete = array_diff($currentImages, $existingImages);
+            foreach ($imagesToDelete as $imageId) {
+                $image = Image::findOrFail($imageId);
+                Storage::disk('public')->delete($image->image_path);
+                $image->delete();
+            }
+
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $imagePath = $image->store('images', 'public');
+                    Image::create([
+                        'image_path' => $imagePath,
+                        'post_id' => $post->post_id,
+                    ]);
+                }
+            }
+
+            $updatedPost = Post::with(['images', 'user.role'])->find($post->post_id);
+
+            return response()->json($updatedPost, 200);
+        } catch (\Exception $e) {
+            Log::error('Post update failed: ' . $e->getMessage());
+            return response()->json(['error' => 'An error occurred while updating the post'], 500);
         }
-
-        $updatedPost = Post::with(['images', 'user.role'])->find($post->post_id);
-
-        return response()->json($updatedPost, 200);
-    } catch (\Exception $e) {
-        Log::error('Post update failed: ' . $e->getMessage());
-        return response()->json(['error' => 'An error occurred while updating the post'], 500);
     }
-}
 
     public function destroy(Post $post)
     {
@@ -155,6 +155,97 @@ class PostController extends Controller
         } catch (\Exception $e) {
             Log::error('Error deleting post: ' . $e->getMessage());
             return response()->json(['error' => 'Failed to delete post'], 500);
+        }
+    }
+
+    public function getUserImages()
+    {
+        try {
+            // Fetch all posts by the authenticated user
+            $posts = Post::where('user_id', Auth::id())->with('images')->get();
+
+            // Extract images from posts
+            $images = $posts->flatMap(function ($post) {
+                return $post->images;
+            });
+
+            // If you want to return unique images, you can use uniqueBy
+            // $images = $images->unique('image_id'); // Assuming 'image_id' is the primary key of the Image model
+
+            return response()->json(['images' => $images], 200);
+        } catch (\Exception $e) {
+            Log::error('Error fetching user images: ' . $e->getMessage());
+            return response()->json(['error' => 'An error occurred while fetching images'], 500);
+        }
+    }
+
+    public function getMyPosts()
+    {
+        Log::info('getMyPosts method called'); // Log the method call
+        try {
+            $posts = Post::where('user_id', Auth::id())
+                ->with(['images', 'user.role'])
+                ->get();
+
+            return response()->json(['posts' => $posts], 200);
+        } catch (\Exception $e) {
+            Log::error('Error fetching user posts: ' . $e->getMessage());
+            return response()->json(['error' => 'An error occurred while fetching your posts'], 500);
+        }
+    }
+
+    public function getGraphicDesignerPosts()
+    {
+        Log::info('getDesignerPosts method called'); // Log the method call
+        try {
+            $posts = Post::whereHas('user', function ($query) {
+                $query->whereHas('role', function ($roleQuery) {
+                    $roleQuery->where('rolename', 'Graphic Designer');
+                });
+            })
+                ->with(['images', 'user.role'])
+                ->get();
+
+            return response()->json(['posts' => $posts], 200);
+        } catch (\Exception $e) {
+            Log::error('Error fetching Graphic Designer posts: ' . $e->getMessage());
+            return response()->json(['error' => 'An error occurred while fetching Graphic Designer posts'], 500);
+        }
+    }
+
+    public function getPrintingProviderPosts()
+    {
+        try {
+            $posts = Post::whereHas('user', function ($query) {
+                $query->whereHas('role', function ($roleQuery) {
+                    $roleQuery->where('rolename', 'Printing Shop');
+                });
+            })
+                ->with(['images', 'user.role'])
+                ->get();
+
+            return response()->json(['posts' => $posts], 200);
+        } catch (\Exception $e) {
+            Log::error('Error fetching Printing Provider posts: ' . $e->getMessage());
+            return response()->json(['error' => 'An error occurred while fetching Printing Provider posts'], 500);
+        }
+    }
+    public function getClientPosts()
+    {
+        Log::info('getClientPosts method called'); // Log the method call
+        try {
+            $posts = Post::whereHas('user', function ($query) {
+                $query->whereHas('role', function ($roleQuery) {
+                    $roleQuery->where('rolename', 'User'); // Change 'Client' to the actual role name used in your database
+                });
+            })
+                ->with(['images', 'user.role'])
+                ->get();
+
+            return response()->json(['posts' => $posts], 200);
+        } catch (\Exception $e) {
+            Log::error('Error fetching Client posts: ' . $e->getMessage());
+            return response()->json(['error' => 'An error occurred while fetching Client posts'], 500);
         }
     }
 }

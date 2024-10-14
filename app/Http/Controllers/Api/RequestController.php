@@ -39,4 +39,45 @@ class RequestController extends Controller
 
         return response()->json(['message' => 'Request created and notification sent.'], 201);
     }
+    public function accept(Request $request, $requestId)
+    {
+        // Find the request by ID
+        $userRequest = UserRequest::findOrFail($requestId);
+        $userRequest->status = 'accepted'; // Update the status
+        $userRequest->save();
+
+        // Create a notification for the sender
+        $notification = Notification::create([
+            'content' => 'User @' . $request->user()->username . ' has accepted your request.',
+            'status' => 'unread',
+            'user_id' => $userRequest->user_id, // Notify the original sender
+            'request_id' => $userRequest->request_id,
+        ]);
+
+        Log::info('Accepted request: ' . json_encode($notification));
+        event(new NotificationEvent($notification)); // Fire event to notify real-time
+
+        return response()->json(['message' => 'Request accepted and sender notified.'], 200);
+    }
+
+    public function decline(Request $request, $requestId)
+    {
+        // Find the request by ID
+        $userRequest = UserRequest::findOrFail($requestId);
+        $userRequest->status = 'declined'; // Update the status
+        $userRequest->save();
+
+        // Create a notification for the sender
+        $notification = Notification::create([
+            'content' => 'User @' . $request->user()->username . ' has declined your request.',
+            'status' => 'unread',
+            'user_id' => $userRequest->user_id, // Notify the original sender
+            'request_id' => $userRequest->request_id,
+        ]);
+
+        Log::info('Declined request: ' . json_encode($notification));
+        event(new NotificationEvent($notification)); // Fire event to notify real-time
+
+        return response()->json(['message' => 'Request declined and sender notified.'], 200);
+    }
 }

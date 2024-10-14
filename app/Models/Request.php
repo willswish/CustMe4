@@ -33,6 +33,6 @@ class Request extends Model
 
     public function notifications()
     {
-        return $this->hasMany(Notification::class, 'request_id');
+        return $this->hasMany(Notification::class, 'request_id', 'request_id'); // 'request_id' as foreign key and primary key
     }
 }

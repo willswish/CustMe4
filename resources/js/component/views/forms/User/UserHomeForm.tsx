@@ -1,13 +1,13 @@
 import React from 'react';
 import Sidebar from '../components/sidebar';
-import Header from '../components/header';
+import UserHeader from '../components/userheader';
+
 
 const UserHomeForm = () => {
   return (
     <div className="flex">
-      <Sidebar />
       <div className="flex-1 flex flex-col">
-        <Header />
+        <UserHeader />
         <p>USer</p>
         <div className="flex-1 p-8">
           <div className="space-y-8">

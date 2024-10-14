@@ -18,6 +18,8 @@ import CommunityJoin from '../views/CommunityJoin';
 import UserProfileForm from '../views/forms/Admin/UserProfileForm';
 import ShareLocation from '../views/forms/Printing Shop/ShareLocationForm';
 import ChatForm from '../views/forms/Admin/MessageForm';
+import ArtistPrintingProviders from '../views/forms/Admin/MyPostForm';
+import RequestForm from '../views/forms/Admin/RequestForm';
 
 
 const AppRoutes = () => {
@@ -41,6 +43,7 @@ const AppRoutes = () => {
       {/* Protected routes for User */}
       <Route element={<ProtectedRoutes roles={['User']} />}>
         <Route path="/user" element={<UserHome />} />
+        {/* <Route path="/List-of-Desinger&Printing-Provider" element={<ArtistPrintingProviders />} /> */}
       </Route>
 
       {/* Protected routes for Graphic Designer */}
@@ -62,6 +65,13 @@ const AppRoutes = () => {
         <Route path="/chats" element={<ChatForm />} />
         <Route path="/users/:id/profile" element={<UserProfileForm />} />
         <Route path="/share-location" element={<ShareLocation />} />
+        <Route path="/List-of-Desinger&Printing-Provider" element={<ArtistPrintingProviders />} />
+        <Route path="/posts" element={<CreatePostForm />} />
+        <Route path="/provider/:id/profile" element={<UserProfileForm />} />
+        <Route path="/notifications" element={<RequestForm/>} />
+
+      
+        
 
 
       </Route>
@@ -69,6 +79,7 @@ const AppRoutes = () => {
       <Route element={<ProtectedRoutes roles={['Admin', 'Graphic Designer', 'Printing Shop']} />}>
         <Route path="/posts" element={<CreatePostForm />} />
         <Route path="/users/:id/profile" element={<UserProfileForm />} />
+
 
 
       </Route>

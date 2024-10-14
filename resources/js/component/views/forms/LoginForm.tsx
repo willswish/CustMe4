@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import GoogleIcon from '@mui/icons-material/Google'; // Import MUI Google icon
-import FacebookIcon from '@mui/icons-material/Facebook'; // Import MUI Facebook icon
+import { Google as GoogleIcon, Facebook as FacebookIcon } from '@mui/icons-material';
+import { CircularProgress, TextField, Button } from '@mui/material';
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -77,69 +77,89 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-white">
-      <div className="absolute top-8 right-8">
-        <Link to="/register" className="bg-yellow-500 text-white px-4 py-2 rounded">
-          Sign up
-        </Link>
+    <div className="max-w-md w-full p-8 rounded-lg shadow-lg bg-white mx-auto mt-10">
+      <h1 className="text-4xl font-bold text-primary text-center mb-4">CustMe</h1>
+      <p className="text-center text-gray-600 mb-6">
+        Connect with designers and printing providers
+      </p>
+
+      {/* Social Login Buttons */}
+      <div className="flex justify-between mb-6">
+        <Button
+          variant="contained"
+          startIcon={<GoogleIcon />}
+          className="bg-red-600 text-white w-[48%] p-2 rounded-lg"
+        >
+          Google
+        </Button>
+        <Button
+          variant="contained"
+          startIcon={<FacebookIcon />}
+          className="bg-blue-700 text-white w-[48%] p-2 rounded-lg"
+        >
+          Facebook
+        </Button>
       </div>
-      <div className="w-full max-w-md p-8 bg-blue-500 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-center text-yellow-500 mb-8">
-          <span className="text-blue-600">Cust</span>Me
-        </h1>
-        <h2 className="text-xl font-bold mb-4 text-center text-white">Log in Account to CustMe</h2>
-        <p className="text-center text-white mb-4">Connect with designer and printing provider</p>
-        <div className="flex justify-center space-x-4 mb-4">
-          <button className="bg-white text-blue-500 px-4 py-2 rounded flex items-center space-x-2">
-            <GoogleIcon className="w-4 h-4" />
-            <span>Sign up to Google</span>
-          </button>
-          <button className="bg-white text-blue-500 px-4 py-2 rounded flex items-center space-x-2">
-            <FacebookIcon className="w-4 h-4" />
-            <span>Sign up to Facebook</span>
-          </button>
+
+      <p className="text-center text-gray-500 mb-4">OR</p>
+
+      {/* Login Form */}
+      <form onSubmit={handleSubmit}>
+        <div className="mb-4">
+          <TextField
+            fullWidth
+            label="Email"
+            variant="outlined"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onBlur={validateEmail}
+            error={Boolean(emailError)}
+            helperText={emailError}
+            disabled={isLoading}
+          />
         </div>
-        <div className="text-center text-white mb-4">OR</div>
-        <form onSubmit={handleSubmit}>
-          <div className="flex flex-col gap-4">
-            <label className="flex flex-col text-white">
-              Email
-              <input
-                type="text"
-                className="p-2 rounded bg-white text-black"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onBlur={validateEmail}
-                disabled={isLoading}
-              />
-            </label>
-            {emailError && <p className="text-xs text-red-500">{emailError}</p>}
-            <label className="flex flex-col text-white">
-              Password
-              <input
-                type="password"
-                className="p-2 rounded bg-white text-black"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onBlur={validatePassword}
-                disabled={isLoading}
-              />
-            </label>
-            {passwordError && <p className="text-xs text-red-500">{passwordError}</p>}
-            <Link to="/forgot-password" className="text-xs text-white text-right mb-4">
-              Forgot Password?
-            </Link>
-            <button
-              type="submit"
-              className="bg-yellow-500 text-white px-4 py-2 rounded"
-              disabled={isLoading}
-            >
-              {isLoading ? <span className="loading loading-spinner loading-md"></span> : "Log in"}
-            </button>
-          </div>
-        </form>
+
+        <div className="mb-4">
+          <TextField
+            fullWidth
+            label="Password"
+            type="password"
+            variant="outlined"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onBlur={validatePassword}
+            error={Boolean(passwordError)}
+            helperText={passwordError}
+            disabled={isLoading}
+          />
+        </div>
+
+        <Link
+          to="/forgot-password"
+          className="text-right block text-sm text-primary hover:underline mb-4"
+        >
+          Forgot Password?
+        </Link>
+
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          fullWidth
+          disabled={isLoading}
+          className="bg-primary text-white py-2 rounded-lg"
+        >
+          {isLoading ? <CircularProgress size={24} className="text-white" /> : "Log In"}
+        </Button>
+      </form>
+
+      <div className="mt-4 text-center">
+        <p className="text-gray-600 text-sm">
+          Don’t have an account?{" "}
+          <Link to="/register" className="text-primary font-bold">
+            Sign Up
+          </Link>
+        </p>
       </div>
     </div>
   );

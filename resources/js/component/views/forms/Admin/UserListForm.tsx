@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Sidebar from '../components/sidebar';
 import Header from '../components/header';
 import { useAuth, User } from '../../../context/AuthContext'; 
+import AdminHeader from '../components/adminheader';
 
 const UserListForm: React.FC = () => {
   const { fetchAllUsers, user, acceptUser } = useAuth();
@@ -46,7 +47,7 @@ const UserListForm: React.FC = () => {
   return (
     <div className="flex bg-white">
       <div className="flex-1 flex flex-col">
-        <Header />
+        <AdminHeader />
         <div className="flex-1 p-8">
           <div className="space-y-8">
             <h2 className="text-2xl font-bold text-black mb-4">All Users</h2>

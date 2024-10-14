@@ -23,7 +23,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/requests', [RequestController::class, 'store']);
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/users/{id}/profile', [UserApiController::class, 'getUserProfile']);
-    Route::post('/users/{id}/profile', [UserApiController::class, 'updateUserProfile']);
+    Route::get('/users/{id}/profile', [UserApiController::class, 'getOtherUserProfile']);
+    Route::put('/users/{id}/profile', [UserApiController::class, 'updateUserProfile']);
+    Route::get('/user/images', [PostController::class, 'getUserImages']);
+    Route::get('/users/artist-and-printing-provider', [UserApiController::class, 'getArtistAndPrintingProvider']);
+
 
 
 
@@ -36,6 +40,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/chats', [ChatController::class, 'getMessages']);
     Route::post('/send-message', [ChatController::class, 'sendMessage']);
     Route::get('/user-chat-list', [ChatController::class, 'getUserChatList']);
+
+    Route::get('/myposts', [PostController::class, 'getMyPosts']);
+    Route::get('/designerposts', [PostController::class, 'getGraphicDesignerPosts']);
+    Route::get('/providerposts', [PostController::class, 'getPrintingProviderPosts']);
+    Route::get('/clientposts', [PostController::class, 'getClientPosts']);
+    Route::get('/allposts', [PostController::class, 'displayPost']);
+
+
+    Route::post('/notifications/{requestId}/accept', [RequestController::class, 'accept']);
+    Route::post('/notifications/{requestId}/decline', [RequestController::class, 'decline']);
 });
 
 

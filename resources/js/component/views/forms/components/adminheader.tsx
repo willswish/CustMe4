@@ -11,12 +11,12 @@ import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import { FaHome, FaPlus, FaTasks, FaSignOutAlt, FaComments, FaPencilRuler } from 'react-icons/fa';
-import NotificationsDropdown from '../components/NotificationsDropDown';
+import NotificationsDropdown from './NotificationsDropDown';
 import Avatar from '@mui/material/Avatar';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 
-const Header: React.FC = () => {
+const AdminHeader: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Sidebar starts closed
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -104,26 +104,11 @@ const Header: React.FC = () => {
             )}
 
             {/* Menu Items */}
-            <ListItem component={NavLink} to="/List-of-Desinger&Printing-Provider" sx={{ mt: 2 }}>
-              <ListItemIcon sx={{ color: 'black' }}>
-                <FaHome />
-              </ListItemIcon>
-              <ListItemText primary="Dashboard" />
-            </ListItem>
+          
 
-            <ListItem component={NavLink} to="/chats" >
-              <ListItemIcon sx={{ color: 'black' }}>
-                <FaComments />
-              </ListItemIcon>
-              <ListItemText primary="Chats" />
-            </ListItem>
+            
 
-            <ListItem component={NavLink} to="/allposts" >
-              <ListItemIcon sx={{ color: 'black' }}>
-                <FaPencilRuler />
-              </ListItemIcon>
-              <ListItemText primary="Designer" />
-            </ListItem>
+        
 
             <ListItem component={NavLink} to="/users" >
               <ListItemIcon sx={{ color: 'black' }}>
@@ -132,12 +117,7 @@ const Header: React.FC = () => {
               <ListItemText primary="Users" />
             </ListItem>
 
-            <ListItem component={NavLink} to="/posts" >
-              <ListItemIcon sx={{ color: 'black' }}>
-                <FaPlus />
-              </ListItemIcon>
-              <ListItemText primary="Add Post" />
-            </ListItem>
+          
           </List>
         </Box>
 
@@ -153,4 +133,4 @@ const Header: React.FC = () => {
   );
 };
 
-export default Header;
+export default AdminHeader;

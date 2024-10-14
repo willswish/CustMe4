@@ -37,6 +37,7 @@
         "react-dom": "^18.2.0",
         "react-icons": "^5.2.1",
         "react-leaflet": "^4.2.1",
+        "react-material-ui-carousel": "^3.4.2",
         "react-router-dom": "^6.24.1",
         "styled-components": "^6.1.13"
     }

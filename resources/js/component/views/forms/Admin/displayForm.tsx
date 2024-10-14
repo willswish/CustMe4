@@ -2,9 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaStar, FaEdit, FaTrash, FaPaperPlane, FaComments } from 'react-icons/fa';
 import Header from '../components/header';
-import { Card, CardContent, CardActions, Typography, Button } from '@mui/material';
+import { Card, CardContent, CardActions, Typography, Button, Select, MenuItem } from '@mui/material';
 import { usePostContext } from '../../../context/PostContext';
 import { useRequest } from '../../../context/RequestContext';
+import AdminDropdown from '../components/dropdown/admin_dropdown';
+import UserDropdown from '../components/dropdown/user_dropdown';
+import DesignerDropdown from '../components/dropdown/designer_dropdown';
+import PrintingDropdown from '../components/dropdown/printing_dropdown'; 
 
 interface Image {
   image_id: number;
@@ -12,19 +16,19 @@ interface Image {
 }
 
 const DisplayForm: React.FC = () => {
-  const { posts, fetchPosts, currentPage, totalPages, user, deletePost } = usePostContext();
+  const { posts, fetchPosts, fetchMyPosts, fetchDesignerPosts, fetchProviderPosts, currentPage, totalPages, user, deletePost } = usePostContext();
   const { handleRequest } = useRequest();
   const [page, setPage] = useState(currentPage);
+  const [filter, setFilter] = useState('all'); // State to manage dropdown selection
   const { userId } = useParams();
   const navigate = useNavigate();
 
-  const fetchPostsCallback = useCallback(async (page: number, limit: number) => {
-    await fetchPosts(page, limit);
-  }, [fetchPosts]);
+
 
   useEffect(() => {
-    fetchPostsCallback(page, 4);
-  }, [page, fetchPostsCallback]);
+
+     fetchPosts(page, 4);
+    }, [page, fetchPosts]);
 
   const handlePageChange = (pageNumber: number) => {
     if (pageNumber > 0 && pageNumber <= totalPages && pageNumber !== page) {
@@ -46,12 +50,19 @@ const DisplayForm: React.FC = () => {
     navigate(`/chat/${userId}`); // Redirect to chat page with the user's ID
   };
 
+
+
   return (
     <div className="flex bg-gray-100 min-h-screen">
       <div className="flex-1 flex flex-col">
         <Header />
-        <div className="flex-1 p-8 mt-16">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1">
+        
+        {user && user.role && user.role.rolename === 'Admin' && <AdminDropdown />}
+        {user && user.role && user.role.rolename === 'User' && <UserDropdown />}
+        {user && user.role && user.role.rolename === 'Graphic Designer' && <DesignerDropdown />}
+        {user && user.role && user.role.rolename === 'Printing Shop' && <PrintingDropdown />}
+       
+          <div className="grid grid-cols-1 sm:grid-cols-2 justify-evenly md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1">
             {posts.length > 0 ? (
               posts.map((post) => (
                 <Card key={post.post_id} className="shadow-lg" style={{ width: '300px', height: 'auto' }}>
@@ -177,7 +188,7 @@ const DisplayForm: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+   
   );
 };
 
@@ -196,7 +207,7 @@ const ImageCarousel: React.FC<{ images: Image[] }> = ({ images }) => {
     <div className="relative w-full h-48">
       <button
         onClick={prevImage}
-        className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-gray-700 text-white px-2 py-1 rounded-full focus:outline-none hover:bg-gray-800"
+        className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-transparent text-white px-2 py-1 rounded-full focus:outline-none hover:bg-gray-700 hover:bg-opacity-70 transition"
       >
         &#8249;
       </button>
@@ -207,7 +218,7 @@ const ImageCarousel: React.FC<{ images: Image[] }> = ({ images }) => {
       />
       <button
         onClick={nextImage}
-        className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-700 text-white px-2 py-1 rounded-full focus:outline-none hover:bg-gray-800"
+        className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-transparent text-white px-2 py-1 rounded-full focus:outline-none hover:bg-gray-800"
       >
         &#8250;
       </button>

@@ -2,6 +2,14 @@ import React, { createContext, useContext, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import apiService from '../services/apiService';
 
+// Define an interface for the request payload
+interface RequestPayload {
+  user_id: number;
+  target_user_id: number;
+  post_id: number;
+  content: string;
+}
+
 interface RequestContextProps {
   handleRequest: (postId: number, postUserId: number) => Promise<void>;
 }
@@ -18,12 +26,14 @@ export const RequestProvider: React.FC<RequestProviderProps> = ({ children }) =>
   const handleRequest = async (postId: number, postUserId: number) => {
     if (user) {
       try {
-        await apiService.post('/requests', {
+        const requestPayload: RequestPayload = {
           user_id: user.id,
           target_user_id: postUserId,
           post_id: postId,
           content: `User ${user.username} has requested for your product.`,
-        });
+        };
+
+        await apiService.post('/requests', requestPayload); // Use the defined payload
       } catch (error) {
         console.error('Failed to send request', error);
       }

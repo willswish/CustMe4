@@ -26,9 +26,14 @@ interface Post {
 interface PostContextType {
   posts: Post[];
   fetchPosts: (page: number, limit: number) => void;
+  fetchMyPosts: (page: number, limit: number) => void; // New method
+  fetchClientPosts: (page: number, limit: number) => void; // New method
+  fetchDesignerPosts: (page: number, limit: number) => void; // New method
+  fetchProviderPosts: (page: number, limit: number) => void; // New method
   addPost: (newPost: Post) => void;
   updatePost: (updatedPost: Post) => void;
   deletePost: (postId: number) => void;
+  getUserImages: () => Promise<Image[]>;
   user: User | null;
   currentPage: number;
   totalPosts: number;
@@ -67,6 +72,107 @@ export const PostProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
+  // New method to fetch user's posts
+  const fetchMyPosts = useCallback(async (page: number, limit: number) => {
+    try {
+      const response = await apiService.get<{ posts: Post[] }>(`/myposts?page=${page}&limit=${limit}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+  
+      // Check the response structure
+      console.log('Response from myPosts:', response.data);
+  
+      const fetchedPosts = response.data.posts.map((post) => ({
+        ...post,
+        images: post.images || [],
+        user: post.user || { username: 'Unknown', role: { rolename: 'N/A' } },
+      }));
+      setPosts(fetchedPosts);
+      setTotalPosts(fetchedPosts.length); // Update total posts
+      setTotalPages(Math.ceil(fetchedPosts.length / postsPerPage)); // Calculate total pages based on fetched posts
+      setCurrentPage(page);
+    } catch (error) {
+      console.log('Error fetching my posts:', error);
+    }
+  }, []);
+  
+  const fetchDesignerPosts = useCallback(async (page: number, limit: number) => {
+    try {
+      const response = await apiService.get<{ posts: Post[] }>(`/designerposts?page=${page}&limit=${limit}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+  
+      console.log('Designer Posts Response:', response.data); // Log the response for debugging
+  
+      const fetchedPosts = response.data.posts.map((post) => ({
+        ...post,
+        images: post.images || [],
+        user: post.user || { username: 'Unknown', role: { rolename: 'N/A' } },
+      }));
+      setPosts(fetchedPosts);
+      setTotalPosts(fetchedPosts.length); // Update total posts
+      setTotalPages(Math.ceil(fetchedPosts.length / postsPerPage)); // Calculate total pages based on fetched posts
+      setCurrentPage(page);
+    } catch (error) {
+      console.log('Error fetching designer posts:', error);
+    }
+  }, []);
+  
+
+  const fetchProviderPosts = useCallback(async (page: number, limit: number) => {
+    try {
+      const response = await apiService.get<{ posts: Post[] }>(`/providerposts?page=${page}&limit=${limit}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+  
+      console.log('Provider Posts Response:', response.data); // Log the response for debugging
+  
+      const fetchedPosts = response.data.posts.map((post) => ({
+        ...post,
+        images: post.images || [],
+        user: post.user || { username: 'Unknown', role: { rolename: 'N/A' } },
+      }));
+      setPosts(fetchedPosts);
+      setTotalPosts(fetchedPosts.length); // Update total posts
+      setTotalPages(Math.ceil(fetchedPosts.length / postsPerPage)); // Calculate total pages based on fetched posts
+      setCurrentPage(page);
+    } catch (error) {
+      console.log('Error fetching provider posts:', error);
+    }
+  }, []);
+
+  const fetchClientPosts = useCallback(async (page: number, limit: number) => {
+    try {
+      const response = await apiService.get<{ posts: Post[] }>(`/clientposts?page=${page}&limit=${limit}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+
+      console.log('Client Posts Response:', response.data); 
+
+      const fetchedPosts = response.data.posts.map((post) => ({
+        ...post,
+        images: post.images || [],
+        user: post.user || { username: 'Unknown', role: { rolename: 'N/A' } },
+      }));
+      setPosts(fetchedPosts);
+      setTotalPosts(fetchedPosts.length); 
+      setTotalPages(Math.ceil(fetchedPosts.length / postsPerPage)); 
+      setCurrentPage(page);
+    } catch (error) {
+      console.log('Error fetching client posts:', error);
+    }
+  }, []);
+  
+  
+
   const addPost = useCallback((newPost: Post) => {
     setPosts((prevPosts) => [{ ...newPost, images: newPost.images || [] }, ...prevPosts]);
   }, []);
@@ -100,6 +206,24 @@ export const PostProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
+  // New function to get user images
+  const getUserImages = useCallback(async () => {
+    try {
+      if (user) {
+        const response = await apiService.get(`/users/${user.id}/images`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
+
+        return response.data.images || [];
+      }
+    } catch (error) {
+      console.log('Error fetching user images:', error);
+      return [];
+    }
+  }, [user]);
+
   useEffect(() => {
     if (user) {
       fetchPosts(currentPage, postsPerPage);
@@ -107,7 +231,7 @@ export const PostProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [user, currentPage, fetchPosts]);
 
   return (
-    <PostContext.Provider value={{ posts, fetchPosts, addPost, updatePost, deletePost, user, currentPage, totalPosts, totalPages }}>
+    <PostContext.Provider value={{ posts, fetchPosts, fetchClientPosts, fetchMyPosts, fetchDesignerPosts, fetchProviderPosts, addPost, updatePost, deletePost, getUserImages, user, currentPage, totalPosts, totalPages }}>
       {children}
     </PostContext.Provider>
   );

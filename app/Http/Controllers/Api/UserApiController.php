@@ -194,4 +194,53 @@ class UserApiController extends Controller
 
         return response()->json(['message' => 'User accepted and verified'], 200);
     }
+    public function getArtistAndPrintingProvider(Request $request)
+    {
+        // Define the role IDs for "Graphic Designer" and "Printing Provider"
+        $roleIds = [3, 4]; // Assuming 3 is Graphic Designer and 4 is Printing Provider
+
+        // Fetch users with the specified roles
+        $users = User::whereIn('role_id', $roleIds)
+            ->with('personalInformation') // Load personal information directly
+            ->get();
+
+        // Define a mapping of role IDs to role names
+        $roleNames = [
+            3 => 'Graphic Designer',
+            4 => 'Printing Provider',
+        ];
+
+        // Add the role name to each user based on their role_id
+        foreach ($users as $user) {
+            $user->role_name = $roleNames[$user->role_id] ?? 'Unknown'; // Set the role name, default to 'Unknown' if not found
+        }
+
+        Log::info('Retrieved users for roles:', ['role_ids' => $roleIds, 'users' => $users]);
+
+        return response()->json(['users' => $users], 200);
+    }
+    public function getOtherUserProfile($id)
+    {
+        // Fetch user by ID along with images
+        $user = User::with(['personalInformation', 'stores.location', 'images']) // Adjust this based on your relationships
+            ->where('id', $id)
+            ->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'username' => $user->username,
+                'email' => $user->email,
+                'verified' => $user->verified,
+                'personal_information' => $user->personalInformation,
+                'stores' => $user->stores,
+                'images' => $user->images,
+                // Add images to the response
+            ],
+        ]);
+    }
 }

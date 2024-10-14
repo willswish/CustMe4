@@ -3,6 +3,8 @@ import { useStore } from '../../../context/StoreContext';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import Header from '../components/header';
+import { Button, TextField, Typography, Container, Paper, IconButton } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 
 const ShareLocation = () => {
   const { createStore, loading } = useStore();
@@ -22,18 +24,15 @@ const ShareLocation = () => {
               const { latitude, longitude } = position.coords;
               setLatitude(latitude);
               setLongitude(longitude);
-              setAddress(''); 
+              setAddress('');
               setShowMap(true);
-              console.log('Latitude:', latitude, 'Longitude:', longitude); // Debugging
             },
             (error) => {
-              // Fallback to Lapu-Lapu, Philippines location
               alert('Unable to retrieve your location. Defaulting to Lapu-Lapu City, Cebu, Philippines.');
-              setLatitude(10.3103); // Lapu-Lapu City latitude
-              setLongitude(123.9494); // Lapu-Lapu City longitude
+              setLatitude(10.3103);
+              setLongitude(123.9494);
               setAddress('Lapu-Lapu City, Cebu, Philippines');
               setShowMap(true);
-              console.error('Geolocation error:', error);
             },
             {
               enableHighAccuracy: true,
@@ -42,10 +41,9 @@ const ShareLocation = () => {
             }
           );
         } else if (result.state === 'denied') {
-          // Permission denied, fallback to Lapu-Lapu City, Cebu, Philippines location
           alert('Location access denied. Defaulting to Lapu-Lapu City, Cebu, Philippines.');
-          setLatitude(10.3103); // Lapu-Lapu City latitude
-          setLongitude(123.9494); // Lapu-Lapu City longitude
+          setLatitude(10.3103);
+          setLongitude(123.9494);
           setAddress('Lapu-Lapu City, Cebu, Philippines');
           setShowMap(true);
         }
@@ -87,79 +85,80 @@ const ShareLocation = () => {
   };
 
   return (
-    <div className="flex h-screen bg-white">
-  
-      <div className="flex-1 flex flex-col bg-white">
-        <Header />
+    <Container maxWidth="sm">
+      <Header />
+      <Paper elevation={3} style={{ padding: '20px', marginTop: '20px' }}>
+        <Typography variant="h5" align="center" gutterBottom>
+          Share Your Location
+        </Typography>
+        <Button variant="contained" color="primary" fullWidth onClick={handleShareLocation}>
+          Share Location
+        </Button>
 
-        <div className="flex flex-col items-center justify-center flex-1 p-4 overflow-y-auto">
-          <div className="w-full max-w-md bg-gray-600 text-white py-2 px-4 mb-4 text-center">
-            <button 
-              type="button" 
-              onClick={handleShareLocation} 
-              className="w-full"
+        {showMap && latitude !== null && longitude !== null && (
+          <div style={{ position: 'relative', margin: '20px 0' }}>
+            <IconButton
+              onClick={handleRemoveMap}
+              style={{ position: 'absolute', top: '0', right: '0' }}
+              color="secondary"
             >
-              Share Location
-            </button>
+              <CloseIcon />
+            </IconButton>
+            <MapContainer
+              center={[latitude, longitude] as [number, number]}
+              zoom={13}
+              style={{ height: '300px', width: '100%' }}
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              />
+              <Marker position={[latitude, longitude]} />
+            </MapContainer>
           </div>
+        )}
 
-          {showMap && latitude !== null && longitude !== null && (
-            <div className="relative w-full bg-gray-200 p-4 mb-4 max-w-md">
-              <button 
-                type="button" 
-                onClick={handleRemoveMap} 
-                className="absolute top-0 right-0 m-2 text-red-500 text-xl"
-              >
-                &times;
-              </button>
-              <MapContainer
-                center={[latitude, longitude] as [number, number]}
-                zoom={13}
-                style={{ height: '300px', width: '100%' }}
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                <Marker position={[latitude, longitude]} />
-              </MapContainer>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="w-full max-w-md bg-white">
-            <input
-              type="text"
-              placeholder="Store Name"
-              value={storename}
-              onChange={(e) => setStorename(e.target.value)}
-              required
-              className="w-full bg-blue-500 text-white py-2 px-4 mb-4"
-            />
-            <input
-              type="text"
-              placeholder="Address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="w-full bg-blue-500 text-white py-2 px-4 mb-4"
-            />
-            <textarea
-              placeholder="Description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-blue-500 text-white py-2 px-4 mb-4"
-            />
-
-            <button 
-              type="submit" 
-              disabled={loading} 
-              className="bg-gray-500 text-white py-2 px-4 w-full"
-            >
-              {loading ? 'Creating...' : 'Create Store'}
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
+        <form onSubmit={handleSubmit} style={{ marginTop: '20px' }}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            label="Store Name"
+            value={storename}
+            onChange={(e) => setStorename(e.target.value)}
+            required
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            variant="outlined"
+            label="Address"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            variant="outlined"
+            label="Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            margin="normal"
+            multiline
+            rows={4}
+          />
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={loading}
+            fullWidth
+            style={{ marginTop: '20px' }}
+          >
+            {loading ? 'Creating...' : 'Create Store'}
+          </Button>
+        </form>
+      </Paper>
+    </Container>
   );
 };
 

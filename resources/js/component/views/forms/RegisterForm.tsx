@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Google, Facebook } from "@mui/icons-material"; // MUI icons
+import { TextField, Button, CircularProgress, Typography, Box } from "@mui/material"; // MUI components
 import apiServices from "../../services/apiService";
-import { Google, Facebook } from "@mui/icons-material"; // Import MUI icons
 
 const RegisterForm = () => {
   const [email, setEmail] = useState("");
@@ -18,13 +19,13 @@ const RegisterForm = () => {
   const [zipcodeError, setZipcodeError] = useState("");
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<string>("2");
+  const [selectedRole, setSelectedRole] = useState("2");
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
-    const role = queryParams.get('role');
+    const role = queryParams.get("role");
     if (role) {
       setSelectedRole(role);
     }
@@ -120,119 +121,166 @@ const RegisterForm = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-white">
-      <div className="absolute top-8 right-8">
-        <Link to="/login" className="bg-yellow-500 text-white px-4 py-2 rounded">
-          Log in
-        </Link>
-      </div>
-      <div className="w-full max-w-md p-8 bg-blue-500 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-center text-yellow-500 mb-8">
-          <span className="text-blue-600">Cust</span>Me
-        </h1>
-        <h2 className="text-xl font-bold mb-4 text-center text-white">Register Account to CustMe</h2>
-        <p className="text-center text-white mb-4">Connect with designer and printing provider</p>
-        <div className="flex justify-center space-x-4 mb-4">
-          <button className="bg-white text-blue-500 px-4 py-2 rounded flex items-center space-x-2">
-            <Google className="w-4 h-4" />
-            <span>Sign up with Google</span>
-          </button>
-          <button className="bg-white text-blue-500 px-4 py-2 rounded flex items-center space-x-2">
-            <Facebook className="w-4 h-4" />
-            <span>Sign up with Facebook</span>
-          </button>
-        </div>
-        <div className="text-center text-white mb-4">OR</div>
-        <form onSubmit={handleSubmit}>
-          <div className="flex flex-col gap-4">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                className="p-2 rounded bg-white text-black w-1/2"
-                placeholder="First Name"
+    <>
+      {/* Registration Form */}
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
+          <Typography variant="h4" className="text-center text-primary font-bold mb-4">
+            CustMe
+          </Typography>
+          <Typography variant="h6" className="text-center text-gray-700 mb-6">
+            Register Your Account
+          </Typography>
+
+          {/* Social Login Buttons */}
+          <Box display="flex" justifyContent="space-between" mb={2}>
+            <Button
+              variant="contained"
+              startIcon={<Google />}
+              className="bg-red-600 text-white w-[48%]"
+            >
+              Google
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<Facebook />}
+              className="bg-blue-700 text-white w-[48%]"
+            >
+              Facebook
+            </Button>
+          </Box>
+
+          <Typography className="text-center text-gray-500 mb-4">OR</Typography>
+
+          {/* Registration Form Fields */}
+          <form onSubmit={handleSubmit}>
+            <Box mb={3} display="flex" gap={2}>
+              <TextField
+                label="First Name"
+                variant="outlined"
+                fullWidth
                 value={firstname}
                 onChange={(e) => setFirstname(e.target.value)}
                 required
               />
-              <input
-                type="text"
-                className="p-2 rounded bg-white text-black w-1/2"
-                placeholder="Last Name"
+              <TextField
+                label="Last Name"
+                variant="outlined"
+                fullWidth
                 value={lastname}
                 onChange={(e) => setLastname(e.target.value)}
                 required
               />
+            </Box>
+
+            <Box mb={2}>
+              <TextField
+                label="Username"
+                variant="outlined"
+                fullWidth
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                onBlur={validateUsername}
+                error={Boolean(usernameError)}
+                helperText={usernameError}
+                required
+              />
+            </Box>
+
+            <Box mb={2}>
+              <TextField
+                label="Email"
+                variant="outlined"
+                fullWidth
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onBlur={validateEmail}
+                error={Boolean(emailError)}
+                helperText={emailError}
+                required
+              />
+            </Box>
+
+            <Box mb={2}>
+              <TextField
+                label="Password"
+                type="password"
+                variant="outlined"
+                fullWidth
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onBlur={validatePassword}
+                error={Boolean(passwordError)}
+                helperText={passwordError}
+                required
+              />
+            </Box>
+
+            <Box mb={2}>
+              <TextField
+                label="Confirm Password"
+                type="password"
+                variant="outlined"
+                fullWidth
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                onBlur={validateConfirmPassword}
+                error={Boolean(confirmPasswordError)}
+                helperText={confirmPasswordError}
+                required
+              />
+            </Box>
+
+            <Box mb={2}>
+              <TextField
+                label="Zipcode"
+                variant="outlined"
+                fullWidth
+                value={zipcode}
+                onChange={(e) => setZipcode(e.target.value)}
+                onBlur={validateZipcode}
+                error={Boolean(zipcodeError)}
+                helperText={zipcodeError}
+                required
+              />
+            </Box>
+
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              className="bg-primary text-white py-2"
+              disabled={loading}
+            >
+              {loading ? <CircularProgress size={24} className="text-white" /> : "Register"}
+            </Button>
+          </form>
+
+          {registrationSuccess && (
+            <div className="modal modal-open">
+              <div className="modal-box">
+                <h3 className="font-bold text-lg">Registration Successful</h3>
+                <p className="py-4">Successfully registered!</p>
+                <div className="modal-action">
+                  <button className="btn" onClick={handleModalClose}>
+                    Close
+                  </button>
+                </div>
+              </div>
             </div>
-            <input
-              type="text"
-              className="p-2 rounded bg-white text-black"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              onBlur={validateUsername}
-              required
-            />
-            {usernameError && <p className="text-xs text-red-500">{usernameError}</p>}
-            <input
-              type="text"
-              className="p-2 rounded bg-white text-black"
-              placeholder="example@gmail.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onBlur={validateEmail}
-              required
-            />
-            {emailError && <p className="text-xs text-red-500">{emailError}</p>}
-            <input
-              type="password"
-              className="p-2 rounded bg-white text-black"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onBlur={validatePassword}
-              required
-            />
-            {passwordError && <p className="text-xs text-red-500">{passwordError}</p>}
-            <input
-              type="password"
-              className="p-2 rounded bg-white text-black"
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              onBlur={validateConfirmPassword}
-              required
-            />
-            {confirmPasswordError && <p className="text-xs text-red-500">{confirmPasswordError}</p>}
-            <input
-              type="text"
-              className="p-2 rounded bg-white text-black"
-              placeholder="Zipcode"
-              value={zipcode}
-              onChange={(e) => setZipcode(e.target.value)}
-              onBlur={validateZipcode}
-              required
-            />
-            {zipcodeError && <p className="text-xs text-red-500">{zipcodeError}</p>}
-            <button type="submit" className="bg-yellow-500 text-white px-4 py-2 rounded" disabled={loading}>
-              {loading ? "Registering..." : "Register"}
-            </button>
-          </div>
-        </form>
-      </div>
-      {registrationSuccess && (
-        <div className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg">Registration Successful</h3>
-            <p className="py-4">Successfully registered!</p>
-            <div className="modal-action">
-              <button className="btn" onClick={handleModalClose}>
-                Close
-              </button>
-            </div>
+          )}
+
+          <div className="text-center mt-4">
+            <Typography variant="body2">
+              Already have an account?{" "}
+              <Link to="/login" className="text-primary font-bold">
+                Log In
+              </Link>
+            </Typography>
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 };
 

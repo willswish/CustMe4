@@ -1,25 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import Header from '../components/header';
 import { useUserProfile } from '../../../context/UserProfileContext';
+import { usePostContext } from '../../../context/PostContext'; // Import PostContext
 import CircularProgress from '@mui/material/CircularProgress';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import { LatLngTuple } from 'leaflet';
 import apiService from '../../../services/apiService';
+import Carousel from 'react-material-ui-carousel'; // Import Carousel
 
 const UserProfileForm: React.FC = () => {
   const { userProfile, fetchUserProfile } = useUserProfile();
+  const { posts } = usePostContext(); // Access posts from PostContext
   const [loading, setLoading] = useState<boolean>(true);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [firstname, setFirstname] = useState<string>('');
   const [lastname, setLastname] = useState<string>('');
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [coverPhoto, setCoverPhoto] = useState<string | null>(null);
-
   const [newProfilePicture, setNewProfilePicture] = useState<File | null>(null);
   const [newCoverPhoto, setNewCoverPhoto] = useState<File | null>(null);
   const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(null);
@@ -52,9 +54,9 @@ const UserProfileForm: React.FC = () => {
   const handleEditToggle = () => {
     if (isEditing) {
       const formData = new FormData();
+      formData.append('_method', 'put'); 
       formData.append('firstname', firstname);
       formData.append('lastname', lastname);
-      formData.append('_method', 'PUT');
 
       if (newProfilePicture) {
         formData.append('profilepicture', newProfilePicture);
@@ -214,32 +216,41 @@ const UserProfileForm: React.FC = () => {
                   </Box>
                 </Box>
               </div>
-              <div className="flex mt-4 space-x-4">
-              {/* Blank Container on Left, now smaller */}
-              <div className="w-96 h-96 bg-white shadow-lg rounded-lg p-4">
-                <p className="text-gray-500">Blank Container</p>
-              </div>
 
-              {/* Map Container on Right, now full width */}
-              <div className="flex-1 bg-white shadow-lg rounded-lg">
-                {userProfile?.location ? (
-                  <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }}>
+              <div className="flex mt-4 space-x-4">
+                {/* Carousel for Images */}
+                <div className="w-96 h-96 bg-white shadow-lg rounded-lg p-4">
+                <Carousel>
+                  {posts.flatMap((post) => 
+                    post.images.map((image) => (
+                      <img
+                        key={image.image_id}
+                        src={`http://127.0.0.1:8000/storage/${image.image_path}`}
+                        alt={`Post Image ${image.image_id}`}
+                        className="w-full h-auto"
+                      />
+                    ))
+                  )}
+                </Carousel>
+
+                </div>
+                
+                {/* Map Section */}
+                <div className="flex-1">
+                  <MapContainer center={position} zoom={13} scrollWheelZoom={false} style={{ height: "300px", width: "100%" }}>
                     <TileLayer
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     />
-                    <Marker position={position}>
-            
-                    </Marker>
+                    {location && <Marker position={position} />}
                   </MapContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-full w-full bg-gray-200">
-                    <p className="text-gray-500">Location not shared</p>
-                  </div>
-                )}
+                  {!location && (
+                    <div className="text-center mt-2">
+                      <Typography variant="body1">Location not shared</Typography>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-
             </>
           )}
         </div>

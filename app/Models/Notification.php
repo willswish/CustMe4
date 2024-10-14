@@ -24,8 +24,6 @@ class Notification extends Model
 
     public function request()
     {
-        return $this->belongsTo(Request::class);
+        return $this->belongsTo(Request::class, 'request_id', 'request_id'); // 'request_id' as foreign key and primary key
     }
 }
-
-
