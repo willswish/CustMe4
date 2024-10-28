@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\RequestController;
 use App\Http\Controllers\Api\UserApiController;
 use App\Http\Controllers\Api\StoreController;
 use App\Http\Controllers\Api\LocationController;
+use App\Http\Controllers\Api\SkillController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -23,8 +24,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/requests', [RequestController::class, 'store']);
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/users/{id}/profile', [UserApiController::class, 'getUserProfile']);
-    Route::get('/users/{id}/profile', [UserApiController::class, 'getOtherUserProfile']);
-    Route::put('/users/{id}/profile', [UserApiController::class, 'updateUserProfile']);
+    // Route::get('/users/{id}/profile', [UserApiController::class, 'getOtherUserProfile']);
+    Route::put('/users/{id}/updateprofile', [UserApiController::class, 'updateUserProfile']);
     Route::get('/user/images', [PostController::class, 'getUserImages']);
     Route::get('/users/artist-and-printing-provider', [UserApiController::class, 'getArtistAndPrintingProvider']);
 
@@ -60,3 +61,6 @@ Route::get('/roles', [UserApiController::class, 'roles']);
 
 Route::post('/login', [UserApiController::class, 'login']);
 Route::post('/register', [UserApiController::class, 'register']);
+
+Route::get('/user-skills', [SkillController::class, 'getAllUserSkills']);
+Route::get('/printing-skills', [SkillController::class, 'getAllPrintingSkills']);

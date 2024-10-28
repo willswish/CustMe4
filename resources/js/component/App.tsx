@@ -9,6 +9,7 @@ import { NotificationProvider } from './context/NotificationContext';
 import { UserProfileProvider } from './context/UserProfileContext';
 import { StoreProvider } from './context/StoreContext';
 import { ChatProvider } from './context/ChatContext';
+import { ClientProfileProvider } from './context/ClientProfileContext'; 
 
 const App = () => {
     return (
@@ -18,13 +19,15 @@ const App = () => {
                     <RequestProvider>
                         <NotificationProvider>
                             <UserProfileProvider>
-                                    <StoreProvider>
-                                        <ChatProvider>
-                                            <TaskProvider>
+                                <StoreProvider>
+                                    <ChatProvider>
+                                        <TaskProvider>
+                                            <ClientProfileProvider>
                                                 <Routes />
-                                            </TaskProvider>
-                                        </ChatProvider>
-                                    </StoreProvider>
+                                            </ClientProfileProvider>
+                                        </TaskProvider>
+                                    </ChatProvider>
+                                </StoreProvider>
                             </UserProfileProvider>
                         </NotificationProvider>
                     </RequestProvider>

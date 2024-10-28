@@ -63,4 +63,27 @@ class User extends Authenticatable
     {
         return $this->hasMany(Chat::class, 'receiver_id');
     }
+    public function aboutMe()
+    {
+        return $this->hasOne(AboutMe::class, 'user_id');
+    }
+
+    public function certificates()
+    {
+        return $this->hasMany(UserCertificate::class, 'user_id');
+    }
+    public function skills()
+    {
+        return $this->belongsToMany(Skill::class, 'user_skills', 'user_id', 'skill_id');
+    }
+
+    public function printingSkills()
+    {
+        return $this->belongsToMany(PrintingSkill::class, 'user_printing_skills', 'user_id', 'printing_skill_id');
+    }
+
+    public function portfolios()
+    {
+        return $this->hasMany(Portfolio::class, 'user_id');
+    }
 }

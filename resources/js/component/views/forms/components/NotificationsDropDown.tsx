@@ -5,14 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../../../context/NotificationContext';
 
 const NotificationsDropdown: React.FC = () => {
-  const { notifications = [] } = useNotification();
+  const { notifications } = useNotification(); // Access notifications directly from context
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedNotification, setSelectedNotification] = useState<number | null>(null); // Changed to number | null
   const navigate = useNavigate();
 
-  const handleNotificationClick = (id: number) => { // Change id parameter to number
-    setSelectedNotification(id); // Set selected notification to highlight
-    navigate('/notifications'); // Navigate to notifications page
+  const handleNotificationClick = (id: number) => {
+    // Navigate to the specific notification
+    navigate(`/notifications/${id}`);
   };
 
   return (
@@ -30,6 +29,7 @@ const NotificationsDropdown: React.FC = () => {
           <FaBell />
         </Badge>
       </IconButton>
+
       {isOpen && (
         <Paper
           elevation={3}
@@ -64,7 +64,7 @@ const NotificationsDropdown: React.FC = () => {
                     borderBottom="1px solid"
                     borderColor="grey.200"
                     sx={{
-                      backgroundColor: selectedNotification === notification.id ? 'rgba(0, 0, 255, 0.1)' : 'transparent',
+                      cursor: 'pointer',
                       transition: 'background-color 0.3s ease',
                       '&:hover': {
                         backgroundColor: 'rgba(0, 0, 255, 0.2)', // Highlight on hover

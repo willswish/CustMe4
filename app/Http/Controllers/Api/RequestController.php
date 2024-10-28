@@ -41,23 +41,36 @@ class RequestController extends Controller
     }
     public function accept(Request $request, $requestId)
     {
-        // Find the request by ID
-        $userRequest = UserRequest::findOrFail($requestId);
-        $userRequest->status = 'accepted'; // Update the status
-        $userRequest->save();
+        try {
+            // Find the request by ID
+            $userRequest = UserRequest::findOrFail($requestId);
+            $userRequest->status = 'accepted'; // Update the status
+            $userRequest->save();
 
-        // Create a notification for the sender
-        $notification = Notification::create([
-            'content' => 'User @' . $request->user()->username . ' has accepted your request.',
-            'status' => 'unread',
-            'user_id' => $userRequest->user_id, // Notify the original sender
-            'request_id' => $userRequest->request_id,
-        ]);
+            // Create a notification for the sender
+            $notification = Notification::create([
+                'content' => 'User @' . $request->user()->username . ' has accepted your request.',
+                'status' => 'unread',
+                'user_id' => $userRequest->user_id, // Notify the original sender
+                'request_id' => $userRequest->request_id,
+            ]);
 
-        Log::info('Accepted request: ' . json_encode($notification));
-        event(new NotificationEvent($notification)); // Fire event to notify real-time
+            // Log notification creation and event firing
+            Log::info('Accepted request and created notification: ' . json_encode($notification));
 
-        return response()->json(['message' => 'Request accepted and sender notified.'], 200);
+            // Fire the event
+            event(new NotificationEvent($notification));
+
+            Log::info('NotificationEvent successfully fired for request ID: ' . $requestId);
+
+            return response()->json([
+                'message' => 'Request accepted, sender notified in real time.',
+                'event' => 'NotificationEvent fired successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error in accept method: ' . $e->getMessage());
+            return response()->json(['error' => 'Could not process request'], 500);
+        }
     }
 
     public function decline(Request $request, $requestId)

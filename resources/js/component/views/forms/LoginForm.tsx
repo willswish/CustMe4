@@ -78,7 +78,14 @@ const LoginForm = () => {
 
   return (
     <div className="max-w-md w-full p-8 rounded-lg shadow-lg bg-white mx-auto mt-10">
-      <h1 className="text-4xl font-bold text-primary text-center mb-4">CustMe</h1>
+      <div className="text-black font-extrabold text-4xl text-center">
+                        <span className="text-blue-500">C</span>
+                        <span className="text-blue-500">u</span>
+                        <span className="text-blue-500">s</span>
+                        <span className="text-yellow-500">t</span>
+                        <span className="text-blue-500">M</span>
+                        <span className="text-yellow-500">e</span>
+                    </div>
       <p className="text-center text-gray-600 mb-6">
         Connect with designers and printing providers
       </p>

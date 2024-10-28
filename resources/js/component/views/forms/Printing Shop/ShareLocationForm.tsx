@@ -85,7 +85,7 @@ const ShareLocation = () => {
   };
 
   return (
-    <Container maxWidth="sm">
+    <Container maxWidth="sm" className='mt-20'>
       <Header />
       <Paper elevation={3} style={{ padding: '20px', marginTop: '20px' }}>
         <Typography variant="h5" align="center" gutterBottom>

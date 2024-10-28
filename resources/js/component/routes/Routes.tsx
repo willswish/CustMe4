@@ -20,6 +20,10 @@ import ShareLocation from '../views/forms/Printing Shop/ShareLocationForm';
 import ChatForm from '../views/forms/Admin/MessageForm';
 import ArtistPrintingProviders from '../views/forms/Admin/MyPostForm';
 import RequestForm from '../views/forms/Admin/RequestForm';
+import ClientPost from '../views/forms/Admin/ClientPostForm';
+import ClientProfile from '../views/forms/Admin/ClientProfileForm';
+import DesignerInformationPage from '../views/designerInfo';
+import PrintingInformationPage from '../views/printingInfo';
 
 
 const AppRoutes = () => {
@@ -31,6 +35,8 @@ const AppRoutes = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/join" element={<CommunityJoin />} />
+        <Route path="/desingner-Info" element={<DesignerInformationPage/>} />
+        <Route path="/printing-Info" element={<PrintingInformationPage/>} />
       </Route>
 
 
@@ -69,6 +75,8 @@ const AppRoutes = () => {
         <Route path="/posts" element={<CreatePostForm />} />
         <Route path="/provider/:id/profile" element={<UserProfileForm />} />
         <Route path="/notifications" element={<RequestForm/>} />
+        <Route path="/clientpost" element={<ClientPost/>} />
+        <Route path="/clients/:id/profile" element={<ClientProfile/>} />
 
       
         

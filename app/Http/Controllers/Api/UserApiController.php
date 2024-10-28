@@ -4,6 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\PersonalInformation;
+use App\Models\PrintingSkill;
+use App\Models\Skill;
+use App\Models\AboutMe;
+use App\Models\UserCertificate;
+use App\Models\Portfolio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
@@ -17,12 +22,22 @@ class UserApiController extends Controller
     protected $roleModel;
     protected $userModel;
     protected $personalInfoModel;
+    protected $skill;
+    protected $printingSkill;
+    protected $aboutMe;
+    protected $certificate;
+    protected $portfolio;
 
     function __construct()
     {
         $this->userModel = new User();
         $this->roleModel = new Role();
         $this->personalInfoModel = new PersonalInformation();
+        $this->skill = new Skill();
+        $this->printingSkill = new PrintingSkill();
+        $this->aboutMe = new AboutMe();
+        $this->certificate = new UserCertificate();
+        $this->portfolio = new Portfolio();
     }
 
     public function login(Request $request)
@@ -75,6 +90,9 @@ class UserApiController extends Controller
 
     public function register(Request $request)
     {
+        // Debug: Check all incoming request data
+        Log::info('Incoming request data:', $request->all());
+
         $validator = Validator::make($request->all(), [
             'username' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -86,12 +104,19 @@ class UserApiController extends Controller
             'profilepicture' => 'nullable|string',
             'coverphoto' => 'nullable|string',
             'zipcode' => 'required|string|max:10',
+            'bio' => 'nullable|string', // For AboutMe
+            'skills' => 'nullable|array', // Array of skill IDs
+            'printing_skills' => 'nullable|array', // Array of printing skill IDs
+            'certificate' => 'nullable|file|mimes:pdf,jpg,png|max:2048',
+            'portfolio' => 'nullable|file|mimes:pdf,jpg,png|max:2048' // For UserCertificate
         ]);
 
         if ($validator->fails()) {
+            Log::error('Validation errors:', $validator->errors()->toArray());
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        // Step 1: Create the User
         $user = $this->userModel->create([
             'username' => $request->username,
             'email' => $request->email,
@@ -99,8 +124,9 @@ class UserApiController extends Controller
             'role_id' => $request->role_id,
             'verified' => $request->has('verified') ? $request->verified : false,
         ]);
+        Log::info('User created successfully with ID:', [$user->id]);
 
-
+        // Step 2: Create Personal Information
         $this->personalInfoModel->create([
             'user_id' => $user->id,
             'firstname' => $request->firstname,
@@ -109,7 +135,57 @@ class UserApiController extends Controller
             'coverphoto' => $request->coverphoto,
             'zipcode' => $request->zipcode,
         ]);
+        Log::info('Personal information created for user ID:', [$user->id]);
 
+        // Step 3: Create AboutMe if bio is provided
+        if ($request->filled('bio')) {
+            Log::info('Creating AboutMe entry for user ID:', [$user->id]);
+            $this->aboutMe->create([
+                'user_id' => $user->id,
+                'content' => $request->bio,
+            ]);
+            Log::info('AboutMe entry created successfully for user ID:', [$user->id]);
+        }
+
+        // Step 4: Attach General Skills if provided
+        if ($request->filled('skills')) {
+            Log::info('Attaching skills to user ID:', [$user->id]);
+            $user->skills()->attach($request->skills); // Attaches skills to the user
+        }
+
+        // Step 5: Attach Printing Skills if provided
+        if ($request->filled('printing_skills')) {
+            Log::info('Attaching printing skills to user ID:', [$user->id]);
+            $user->printingSkills()->attach($request->printing_skills); // Attaches printing skills to the user
+        }
+
+        // Step 6: Save Certificate if provided
+        if ($request->hasFile('certificate')) {
+            Log::info('Saving certificate for user ID:', [$user->id]);
+            $certificateFile = $request->file('certificate');
+            $path = $certificateFile->store('certificates', 'public'); // Store in public storage
+            $this->certificate->create([
+                'user_id' => $user->id,
+                'file_path' => $path,
+                'file_name' => $certificateFile->getClientOriginalName(),
+            ]);
+            Log::info('Certificate saved successfully for user ID:', [$user->id]);
+        }
+
+        // Step 7: Save Portfolio if provided
+        if ($request->hasFile('portfolio')) {
+            Log::info('Saving portfolio for user ID:', [$user->id]);
+            $portfolio = $request->file('portfolio');
+            $path = $portfolio->store('portfolios', 'public'); // Save under 'portfolios' in public storage
+            $this->portfolio->create([
+                'user_id' => $user->id,
+                'file_path' => $path,
+                'file_name' => $portfolio->getClientOriginalName(),
+            ]);
+            Log::info('Portfolio saved successfully for user ID:', [$user->id]);
+        }
+
+        Log::info('User registration completed successfully for user ID:', [$user->id]);
         return response()->json(['message' => 'User registered successfully'], 201);
     }
 
@@ -117,7 +193,7 @@ class UserApiController extends Controller
     {
         try {
             // Eager load stores with their locations
-            $user = User::with(['personalInformation', 'stores.location'])->findOrFail($id);
+            $user = User::with(['personalInformation', 'stores.location', 'role', 'posts.images'])->findOrFail($id);
 
             Log::info('User Data:', $user->toArray());
 
@@ -222,7 +298,7 @@ class UserApiController extends Controller
     public function getOtherUserProfile($id)
     {
         // Fetch user by ID along with images
-        $user = User::with(['personalInformation', 'stores.location', 'images']) // Adjust this based on your relationships
+        $user = User::with(['personalInformation', 'stores.location']) // Adjust this based on your relationships
             ->where('id', $id)
             ->first();
 
@@ -238,8 +314,8 @@ class UserApiController extends Controller
                 'verified' => $user->verified,
                 'personal_information' => $user->personalInformation,
                 'stores' => $user->stores,
-                'images' => $user->images,
-                // Add images to the response
+                // 'images' => $user->images,
+
             ],
         ]);
     }
