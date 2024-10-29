@@ -9,7 +9,7 @@ class UserCertificate extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['file_path', 'file_name'];
+    protected $fillable = ['user_id', 'file_path', 'file_name'];
 
     public function user()
     {

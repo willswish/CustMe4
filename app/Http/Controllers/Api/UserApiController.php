@@ -107,8 +107,8 @@ class UserApiController extends Controller
             'bio' => 'nullable|string', // For AboutMe
             'skills' => 'nullable|array', // Array of skill IDs
             'printing_skills' => 'nullable|array', // Array of printing skill IDs
-            'certificate' => 'nullable|file|mimes:pdf,jpg,png|max:2048',
-            'portfolio' => 'nullable|file|mimes:pdf,jpg,png|max:2048' // For UserCertificate
+            'certificate.*' => 'file|mimes:pdf,jpg,jpeg,png,doc,docx,txt', // Add any other types as needed
+            'portfolio.*' => 'file|mimes:pdf,jpg,jpeg,png,doc,docx,txt',
         ]);
 
         if ($validator->fails()) {
@@ -159,35 +159,39 @@ class UserApiController extends Controller
             $user->printingSkills()->attach($request->printing_skills); // Attaches printing skills to the user
         }
 
-        // Step 6: Save Certificate if provided
-        if ($request->hasFile('certificate')) {
-            Log::info('Saving certificate for user ID:', [$user->id]);
-            $certificateFile = $request->file('certificate');
-            $path = $certificateFile->store('certificates', 'public'); // Store in public storage
-            $this->certificate->create([
-                'user_id' => $user->id,
-                'file_path' => $path,
-                'file_name' => $certificateFile->getClientOriginalName(),
-            ]);
-            Log::info('Certificate saved successfully for user ID:', [$user->id]);
-        }
+        $this->saveFiles($request, 'certificate', 'certificates', $user->id);
+        $this->saveFiles($request, 'portfolio', 'portfolios', $user->id);
 
-        // Step 7: Save Portfolio if provided
-        if ($request->hasFile('portfolio')) {
-            Log::info('Saving portfolio for user ID:', [$user->id]);
-            $portfolio = $request->file('portfolio');
-            $path = $portfolio->store('portfolios', 'public'); // Save under 'portfolios' in public storage
-            $this->portfolio->create([
-                'user_id' => $user->id,
-                'file_path' => $path,
-                'file_name' => $portfolio->getClientOriginalName(),
-            ]);
-            Log::info('Portfolio saved successfully for user ID:', [$user->id]);
-        }
+
 
         Log::info('User registration completed successfully for user ID:', [$user->id]);
         return response()->json(['message' => 'User registered successfully'], 201);
     }
+
+    public function saveFiles($request, $fileType, $storagePath, $userId)
+    {
+        if ($request->hasFile($fileType)) {
+            Log::info("Saving {$fileType}(s) for user ID:", [$userId]);
+            $files = $request->file($fileType); // Get the uploaded files
+
+            // Ensure files are treated as an array
+            if (!is_array($files)) {
+                $files = [$files]; // Wrap in array if it's a single file
+            }
+
+            foreach ($files as $file) {
+                $path = $file->store($storagePath, 'public'); // Store in public storage
+                $this->{$fileType}->create([
+                    'user_id' => $userId,
+                    'file_path' => $path,
+                    'file_name' => $file->getClientOriginalName(),
+                ]);
+            }
+
+            Log::info("{$fileType}(s) saved successfully for user ID:", [$userId]);
+        }
+    }
+
 
     public function getUserProfile($id)
     {

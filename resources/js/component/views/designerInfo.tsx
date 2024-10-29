@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Autocomplete, TextField, Button, Chip } from '@mui/material';
-import apiService from '../services/apiService';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Autocomplete, TextField, Button, Chip } from "@mui/material";
+import apiService from "../services/apiService";
 
 type Skill = {
   skill_id: number;
@@ -10,7 +10,7 @@ type Skill = {
 
 const DesignerInformationPage = () => {
   const [skills, setSkills] = useState<Skill[]>([]);
-  const [bio, setBio] = useState<string>('');
+  const [bio, setBio] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
   const [skillsList, setSkillsList] = useState<Skill[]>([]);
   const navigate = useNavigate();
@@ -20,10 +20,10 @@ const DesignerInformationPage = () => {
   useEffect(() => {
     const fetchSkills = async () => {
       try {
-        const response = await apiService.get<{ data: Skill[] }>('/user-skills');
+        const response = await apiService.get<{ data: Skill[] }>("/user-skills");
         setSkillsList(response.data.data);
       } catch (error) {
-        console.error('Error fetching skills:', error);
+        console.error("Error fetching skills:", error);
       }
     };
     fetchSkills();
@@ -49,23 +49,22 @@ const DesignerInformationPage = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Debugging logs to check field values
-    console.log('Submitting form data:');
-    console.log('Role ID:', roleId);
-    console.log('Selected Skills:', skills);
-    console.log('Bio:', bio);
-    console.log('Portfolio File:', file ? file.name : 'No file selected');
-
     // Check if all required fields are completed
     if (!roleId || skills.length === 0 || !bio || !file) {
-      alert('Please complete all required fields.');
+      alert("Please complete all required fields.");
       return;
     }
 
-    navigate('/register', {
+    console.log("Submitting form data:");
+    console.log("Role ID:", roleId);
+    console.log("Selected Skills:", skills);
+    console.log("Bio:", bio);
+    console.log("Portfolio File:", file ? file.name : "No file selected");
+
+    navigate("/register", {
       state: {
-        role: roleId,
-        skills: skills.map(skill => skill.skill_id),
+        roleId,
+        skills: skills.map((skill) => skill.skill_id),
         bio,
         portfolioFile: file,
       },

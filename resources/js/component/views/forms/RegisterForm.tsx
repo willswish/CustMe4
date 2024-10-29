@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Google, Facebook } from "@mui/icons-material"; // MUI icons
-import { TextField, Button, CircularProgress, Typography, Box } from "@mui/material"; // MUI components
+import { Google, Facebook } from "@mui/icons-material";
+import { TextField, Button, CircularProgress, Typography, Box } from "@mui/material";
 import apiServices from "../../services/apiService";
 
 const RegisterForm = () => {
@@ -19,30 +19,47 @@ const RegisterForm = () => {
   const [zipcodeError, setZipcodeError] = useState("");
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [selectedRole, setSelectedRole] = useState("2");
+  const [selectedRole, setSelectedRole] = useState("");
   const [skills, setSkills] = useState<number[]>([]);
+  const [printingSkills, setPrintingSkills] = useState<number[]>([]);
   const [bio, setBio] = useState("");
-  const [portfolioFile, setPortfolioFile] = useState<File | null>(null);
+  const [portfolioFiles, setPortfolioFiles] = useState<File[]>([]);
+  const [certificationsFiles, setCertificationsFiles] = useState<File[]>([]);
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Extract data passed from Designer or Printing Provider pages
   useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
-    const role = queryParams.get("role");
     const state = location.state as any;
-    if (role) setSelectedRole(role);
-    if (state?.bio) setBio(state.bio);
-    if (state?.portfolioFile) setPortfolioFile(state.portfolioFile);
 
-    // Set skills from either Designer or Printing Provider pages
-    if (state?.skills) {
-      setSkills(state.skills); // Designer skills
-    } else if (state?.printingServices) {
-      setSkills(state.printingServices); // Printing provider services
+    if (state?.roleId) {
+      setSelectedRole(state.roleId.toString());
+    } else {
+      setSelectedRole("2"); // Default to role ID 2
     }
-  }, [location]);
+
+    if (state?.bio) setBio(state.bio);
+
+    // Ensure portfolioFiles is treated as an array
+    if (Array.isArray(state?.portfolioFile)) {
+      setPortfolioFiles(state.portfolioFile);
+    } else if (state?.portfolioFile) {
+      setPortfolioFiles([state.portfolioFile]); // Wrap in array if it's a single file
+    }
+
+    // Same for certifications
+    if (Array.isArray(state?.certificationFile)) {
+      setCertificationsFiles(state.certificationFile);
+    } else if (state?.certificationFile) {
+      setCertificationsFiles([state.certificationFile]); // Wrap in array if it's a single file
+    }
+
+    if (selectedRole === "3" && state?.skills) {
+      setSkills(state.skills); // Designer skills
+    } else if (selectedRole === "4" && state?.printingServices) {
+      setPrintingSkills(state.printingServices); // Printing provider services
+    }
+  }, [location, selectedRole]);
 
   const validateEmail = () => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -65,7 +82,7 @@ const RegisterForm = () => {
     setZipcodeError(zipcode.trim() ? "" : "Zipcode is required");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     validateEmail();
@@ -73,18 +90,6 @@ const RegisterForm = () => {
     validateConfirmPassword();
     validateUsername();
     validateZipcode();
-  
-    console.log("Form Data Debug:");
-    console.log("Role ID:", selectedRole);
-    console.log("Username:", username);
-    console.log("Email:", email);
-    console.log("Password:", password);
-    console.log("First Name:", firstname);
-    console.log("Last Name:", lastname);
-    console.log("Zipcode:", zipcode);
-    console.log("Bio:", bio);
-    console.log("Skills:", skills);
-    console.log("Portfolio File:", portfolioFile ? portfolioFile.name : "No file");
   
     if (!emailError && !passwordError && !confirmPasswordError && !usernameError && !zipcodeError) {
       const formData = new FormData();
@@ -97,46 +102,60 @@ const RegisterForm = () => {
       formData.append("zipcode", zipcode);
       formData.append("bio", bio);
   
-      // Append each skill_id individually
-      skills.forEach((skillId: number) => {
-        formData.append("skills[]", skillId.toString());
+      skills.forEach(skill => {
+        formData.append("skills[]", skill.toString());
       });
   
-      if (portfolioFile) {
-        formData.append("portfolioFile", portfolioFile);
-      }
+      printingSkills.forEach(skill => {
+        formData.append("printing_skills[]", skill.toString());
+      });
   
+      // Append portfolio files individually
+      portfolioFiles.forEach((file, index) => {
+        formData.append(`portfolio[${index}]`, file);
+      });
+  
+      // Append certification files individually
+      certificationsFiles.forEach((file, index) => {
+        formData.append(`certificate[${index}]`, file);
+      });
+  
+      console.log("Submitting Form Data: ");
       for (let pair of formData.entries()) {
-        console.log(`${pair[0]}: ${pair[1]}`);
+        console.log(`${pair[0]}: ${pair[1] instanceof File ? pair[1].name : pair[1]}`);
       }
   
-      apiServices
-        .post("/register", formData)
-        .then(() => {
-          setUsername("");
-          setEmail("");
-          setPassword("");
-          setConfirmPassword("");
-          setFirstname("");
-          setLastname("");
-          setZipcode("");
-          setBio("");
-          setSkills([]);
-          setPortfolioFile(null);
-          setRegistrationSuccess(true);
-        })
-        .catch((error) => {
-          console.error("Registration error:", error);
-        })
-        .finally(() => {
-          setLoading(false);
+      try {
+        const response = await apiServices.post("/register", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         });
+        console.log("Registration successful:", response.data);
+        setRegistrationSuccess(true);
+        // Reset form fields after successful registration
+        setUsername("");
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
+        setFirstname("");
+        setLastname("");
+        setZipcode("");
+        setBio("");
+        setSkills([]);
+        setPrintingSkills([]);
+        setPortfolioFiles([]);
+        setCertificationsFiles([]);
+      } catch (error) {
+        console.error("Registration error:", error);
+      } finally {
+        setLoading(false);
+      }
     } else {
       setLoading(false);
     }
   };
   
-
   const handleModalClose = () => {
     setRegistrationSuccess(false);
     navigate("/login");
