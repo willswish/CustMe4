@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\Role;
+use App\Models\UserSkill;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -196,17 +197,45 @@ class UserApiController extends Controller
     public function getUserProfile($id)
     {
         try {
-            // Eager load stores with their locations
-            $user = User::with(['personalInformation', 'stores.location', 'role', 'posts.images'])->findOrFail($id);
+            // Eager load stores with their locations, role, posts, aboutMe, userPrintingSkills, and userSkills
+            $user = User::with([
+                'personalInformation',
+                'stores.location',
+                'role',
+                'posts.images',
+                'aboutMe', // Include aboutMe relationship
+                'userPrintingSkills.printingSkill', // Include userPrintingSkills relationship
+                'userSkills.skill' // Include userSkills relationship
+            ])->findOrFail($id);
 
             Log::info('User Data:', $user->toArray());
 
-            return response()->json(['user' => $user], 200);
+            // Structure the response to include the additional fields
+            return response()->json([
+                'user' => [
+                    'id' => $user->id,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                    'verified' => $user->verified,
+                    'role_name' => $user->role->rolename,
+                    'personal_information' => $user->personalInformation,
+                    'stores' => $user->stores,
+                    'posts' => $user->posts,
+                    'about_me' => $user->aboutMe, // Add aboutMe to the response
+                    'printing_skills' => $user->userPrintingSkills->map(function ($userPrintingSkill) {
+                        return $userPrintingSkill->printingSkill;
+                    }),
+                    'user_skills' => $user->userSkills->map(function ($userSkill) {
+                        return $userSkill->skill;
+                    }),
+                ]
+            ], 200);
         } catch (\Exception $e) {
             Log::error('Error fetching user profile:', ['error' => $e->getMessage()]);
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
     public function updateUserProfile(Request $request, $id)
     {
         Log::info('Incoming request data for updating user profile:', [
@@ -299,28 +328,70 @@ class UserApiController extends Controller
 
         return response()->json(['users' => $users], 200);
     }
-    public function getOtherUserProfile($id)
+    public function updateUserBioSkills(Request $request, $id)
     {
-        // Fetch user by ID along with images
-        $user = User::with(['personalInformation', 'stores.location']) // Adjust this based on your relationships
-            ->where('id', $id)
-            ->first();
+        Log::info('Incoming request data for user profile update:', $request->all());
 
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+        // Validation
+        $validator = Validator::make($request->all(), [
+            'bio' => 'nullable|string',           // For AboutMe
+            'skills' => 'nullable|array',         // Array of skill IDs
+            'printing_skills' => 'nullable|array' // Array of printing skill IDs
+        ]);
+
+        if ($validator->fails()) {
+            Log::error('Validation errors on profile update:', $validator->errors()->toArray());
+            return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        return response()->json([
-            'user' => [
-                'id' => $user->id,
-                'username' => $user->username,
-                'email' => $user->email,
-                'verified' => $user->verified,
-                'personal_information' => $user->personalInformation,
-                'stores' => $user->stores,
-                // 'images' => $user->images,
+        // Retrieve user
+        $user = $this->userModel->find($id);
+        if (!$user) {
+            Log::error('User not found with ID:', [$id]);
+            return response()->json(['error' => 'User not found'], 404);
+        }
 
-            ],
-        ]);
+        // Step 1: Update AboutMe if bio is provided and has changed
+        if ($request->filled('bio') && $user->about_me?->content !== $request->bio) {
+            Log::info('Updating AboutMe entry for user ID:', [$id]);
+            $user->aboutMe()->updateOrCreate(
+                ['user_id' => $id],
+                ['content' => $request->bio]
+            );
+            Log::info('AboutMe entry updated/created successfully for user ID:', [$id]);
+        }
+
+        // Step 2: Sync General Skills only if they have changed
+        if ($request->filled('skills')) {
+            $existingSkillIds = $user->Userskills()->pluck('skill_id')->toArray();
+            $newSkillIds = $request->skills;
+
+            if ($existingSkillIds !== $newSkillIds) { // Only update if there's a difference
+                Log::info('Updating skills for user ID:', [$id]);
+                $user->Userskills()->delete(); // Delete existing skills
+                $user->Userskills()->createMany(
+                    array_map(fn($skillId) => ['skill_id' => $skillId, 'user_id' => $id], $newSkillIds)
+                );
+                Log::info('Skills updated successfully for user ID:', [$id]);
+            }
+        }
+
+        // Step 3: Sync Printing Skills only if they have changed
+        if ($request->filled('printing_skills')) {
+            $existingPrintingSkillIds = $user->UserPrintingskills()->pluck('printing_skill_id')->toArray();
+            $newPrintingSkillIds = $request->printing_skills;
+
+            if ($existingPrintingSkillIds !== $newPrintingSkillIds) { // Only update if there's a difference
+                Log::info('Updating printing skills for user ID:', [$id]);
+                $user->UserPrintingskills()->delete(); // Delete existing printing skills
+                $user->UserPrintingskills()->createMany(
+                    array_map(fn($printingSkillId) => ['printing_skill_id' => $printingSkillId, 'user_id' => $id], $newPrintingSkillIds)
+                );
+                Log::info('Printing skills updated successfully for user ID:', [$id]);
+            }
+        }
+
+        Log::info('User profile updated successfully for user ID:', [$id]);
+        return response()->json(['message' => 'User profile updated successfully'], 200);
     }
 }

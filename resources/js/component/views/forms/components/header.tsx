@@ -141,7 +141,7 @@ const Header: React.FC = () => {
               />
               {isSidebarExpanded && (
                 <NavLink
-                  to={`/users/${user.id}/profile`}
+                  to={`/clients/${user.id}/profile`}
                   className="text-white text-sm hover:underline"
                   style={{ marginTop: '8px' }}
                 >

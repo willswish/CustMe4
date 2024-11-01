@@ -30,13 +30,16 @@ interface UserProfile {
     latitude: number;
     longitude: number;
   } | null;
+  aboutMe?: string;
+  printingSkills?: string[];
+  userSkills?: string[];
 }
 
 interface UserProfileContextProps {
   userProfile: UserProfile | null;
   fetchUserProfile: () => Promise<void>;
   fetchUserProfileById: (userId: number) => Promise<UserProfile | null>;
-  updateUserProfile: (updatedProfile: Partial<PersonalInformation>) => Promise<void>;
+  updateUserProfile: (updatedProfile: Partial<PersonalInformation & { aboutMe?: string; printingSkills?: string[]; userSkills?: string[]; }>) => Promise<void>;
   artistAndPrintingProviders: UserProfile[] | null;
   fetchArtistAndPrintingProviders: () => Promise<void>;
 }
@@ -77,6 +80,9 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
             zipcode: fetchedData.user.personal_information.zipcode,
           },
           location: location || null,
+          aboutMe: fetchedData.user.about_me || '',
+          printingSkills: fetchedData.user.printing_skills || [],
+          userSkills: fetchedData.user.user_skills || [],
         };
 
         setUserProfile(profileData);
@@ -91,7 +97,7 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const fetchUserProfileById = useCallback(async (userId: number) => {
     try {
-      const response = await apiService.get(`/users/${userId}/profile`, { // Change the endpoint to fetch by ID
+      const response = await apiService.get(`/users/${userId}/profile`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
         },
@@ -114,17 +120,20 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
             zipcode: fetchedData.user.personal_information.zipcode,
           },
           location: null,
+          aboutMe: fetchedData.user.about_me || '',
+          printingSkills: fetchedData.user.printing_skills || [],
+          userSkills: fetchedData.user.user_skills || [],
         };
 
-        return profileData; // Return the fetched profile
+        return profileData;
       }
     } catch (error) {
       console.error('Failed to fetch user profile by ID:', error);
     }
-    return null; // Return null if the fetch fails
+    return null;
   }, []);
 
-  const updateUserProfile = useCallback(async (updatedProfile: Partial<PersonalInformation>) => {
+  const updateUserProfile = useCallback(async (updatedProfile: Partial<PersonalInformation & { aboutMe?: string; printingSkills?: string[]; userSkills?: string[]; }>) => {
     if (!user) return;
 
     try {
@@ -142,6 +151,9 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
               ...prevProfile.personalInformation,
               ...updatedProfile,
             } as PersonalInformation,
+            aboutMe: updatedProfile.aboutMe !== undefined ? updatedProfile.aboutMe : prevProfile.aboutMe,
+            printingSkills: updatedProfile.printingSkills !== undefined ? updatedProfile.printingSkills : prevProfile.printingSkills,
+            userSkills: updatedProfile.userSkills !== undefined ? updatedProfile.userSkills : prevProfile.userSkills,
           };
         }
         return prevProfile;
@@ -168,8 +180,8 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, []);
 
   useEffect(() => {
-    fetchUserProfile(); // Fetch the user profile when the component mounts
-    fetchArtistAndPrintingProviders(); // Fetch artist and printing providers on mount
+    fetchUserProfile();
+    fetchArtistAndPrintingProviders();
   }, [fetchUserProfile, fetchArtistAndPrintingProviders]);
 
   return (

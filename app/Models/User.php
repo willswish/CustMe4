@@ -74,12 +74,19 @@ class User extends Authenticatable
     }
     public function skills()
     {
-        return $this->belongsToMany(Skill::class, 'user_skills', 'user_id', 'skill_id');
+        return $this->hasMany(Skill::class, 'user_skills', 'user_id', 'skill_id');
     }
-
+    public function Userskills()
+    {
+        return $this->hasMany(UserSkill::class, 'user_id');
+    }
+    public function UserPrintingskills()
+    {
+        return $this->hasMany(UserPrintingSkill::class, 'user_id');
+    }
     public function printingSkills()
     {
-        return $this->belongsToMany(PrintingSkill::class, 'user_printing_skills', 'user_id', 'printing_skill_id');
+        return $this->hasMany(PrintingSkill::class, 'user_printing_skills', 'user_id', 'printing_skill_id');
     }
 
     public function portfolios()

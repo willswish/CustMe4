@@ -29,7 +29,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user/images', [PostController::class, 'getUserImages']);
     Route::get('/users/artist-and-printing-provider', [UserApiController::class, 'getArtistAndPrintingProvider']);
 
-
+    Route::put('/users/{id}/update-bio&skills', [UserApiController::class, 'updateUserBioSkills']);
 
 
     Route::get('/stores', [StoreController::class, 'getAllStores']);
@@ -51,6 +51,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::post('/notifications/{requestId}/accept', [RequestController::class, 'accept']);
     Route::post('/notifications/{requestId}/decline', [RequestController::class, 'decline']);
+
+    Route::get('/userq/{userId}', [UserApiController::class, 'getUserData']);
 });
 
 

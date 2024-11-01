@@ -8,13 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class PrintingSkill extends Model
 {
     use HasFactory;
+    protected $primaryKey = 'printing_skill_id';
+
 
     protected $fillable = ['printing_skill_name'];
-
-    public function users()
-    {
-        return $this->belongsToMany(User::class, 'user_printing_skills', 'printing_skill_id', 'user_id');
-    }
 
     public function getAllPrintingSkills()
     {
