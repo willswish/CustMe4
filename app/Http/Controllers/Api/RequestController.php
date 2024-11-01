@@ -9,36 +9,85 @@ use App\Models\Notification;
 use App\Events\NotificationEvent;
 use Illuminate\Support\Facades\Log;
 
+
 class RequestController extends Controller
 {
     public function store(Request $request)
     {
+        // Validate incoming request data
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'target_user_id' => 'required|exists:users,id',
             'post_id' => 'required|exists:posts,post_id',
-            'content' => 'required|string',
+            'content' => 'required|string', // This will be for the notification content
+            'request_content' => 'required|string', // Validate request content for the requests table
+            'duration_days' => 'nullable|integer|min:0', // Validate duration days
+            'duration_minutes' => 'nullable|integer|min:0', // Validate duration minutes
         ]);
 
+        // Debug log the validated input
+        Log::info('Validated request data:', $validated);
+
+        // Calculate the completion deadline based on duration
+        $completionDeadline = $this->calculateCompletionDeadline(
+            $validated['duration_days'] ?? 0,
+            $validated['duration_minutes'] ?? 0
+        );
+
+        // Log the payload that will be sent to the database
+        Log::info('UserRequest payload:', [
+            'user_id' => $validated['user_id'],
+            'target_user_id' => $validated['target_user_id'],
+            'request_content' => $validated['request_content'],
+            'duration_days' => $validated['duration_days'] ?? null,
+            'duration_minutes' => $validated['duration_minutes'] ?? null,
+            'completion_deadline' => $completionDeadline,
+        ]);
+
+        // Create the user request and include duration information
         $userRequest = UserRequest::create([
             'user_id' => $validated['user_id'],
             'target_user_id' => $validated['target_user_id'],
             'request_type' => 'product_request',
             'status' => 'pending',
+            'request_content' => $validated['request_content'], // Store the request content here
+            'duration_days' => $validated['duration_days'] ?? null,
+            'duration_minutes' => $validated['duration_minutes'] ?? null,
+            'completion_deadline' => $completionDeadline, // Set the completion deadline
         ]);
 
+        // Log the created user request for debugging
+        Log::info('Created user request:', $userRequest->toArray());
+
+        // Create a notification for the target user
         $notification = Notification::create([
-            'content' => $validated['content'],
+            'content' => $validated['content'], // Notification content
             'status' => 'unread',
             'user_id' => $validated['target_user_id'],
             'request_id' => $userRequest->request_id,
         ]);
 
-        Log::info('Event fired: ' . json_encode($notification));
+        // Log the notification creation event
+        Log::info('Notification created:', $notification->toArray());
         event(new NotificationEvent($notification));
 
         return response()->json(['message' => 'Request created and notification sent.'], 201);
     }
+
+    // Function to calculate completion deadline
+    private function calculateCompletionDeadline($days = 0, $minutes = 0)
+    {
+        $now = new \DateTime(); // Use the leading backslash to indicate the global namespace
+        if ($days > 0) {
+            $now->modify("+{$days} days");
+        }
+        if ($minutes > 0) {
+            $now->modify("+{$minutes} minutes");
+        }
+        return $now->format('Y-m-d H:i:s'); // Ensure correct format for MySQL
+    }
+
+
     public function accept(Request $request, $requestId)
     {
         try {

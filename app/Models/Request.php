@@ -19,6 +19,10 @@ class Request extends Model
         'timestamp',
         'user_id',
         'target_user_id',
+        'request_content',
+        'duration_days',
+        'duration_minutes',
+        'completion_deadline',
     ];
 
     public function user()
