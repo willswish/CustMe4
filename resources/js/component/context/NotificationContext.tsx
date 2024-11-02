@@ -43,13 +43,13 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         });
         setNotifications(response.data.notifications || []);
       } catch (error) {
-        console.error('Error fetching notifications:', error);
+        // console.error('Error fetching notifications:', error);
       }
     };
 
     fetchNotifications();
 
-    Pusher.logToConsole = true;
+    // Pusher.logToConsole = true;
 
     const pusher = new Pusher('087ae63043c8feb92728', {
       cluster: 'ap1',
@@ -59,11 +59,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     const channel = pusher.subscribe('notifications');
 
     channel.bind('pusher:subscription_succeeded', () => {
-      console.log('Successfully subscribed to the notifications channel');
+      // console.log('Successfully subscribed to the notifications channel');
     });
 
     channel.bind('new-notification', (data: any) => {
-      console.log('New notification received:', data);
+      // console.log('New notification received:', data);
       setNotifications((prevNotifications) => [...prevNotifications, data.notification]);
     });
 
@@ -88,7 +88,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         )
       );
     } catch (error) {
-      console.error('Error accepting notification:', error.response ? error.response.data : error.message);
+      // console.error('Error accepting notification:', error.response ? error.response.data : error.message);
     }
   };
 
@@ -107,7 +107,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         )
       );
     } catch (error) {
-      console.error('Error declining notification:', error.response ? error.response.data : error.message);
+      // console.error('Error declining notification:', error.response ? error.response.data : error.message);
     }
   };
 

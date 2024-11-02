@@ -20,11 +20,25 @@ const ShareLocation = () => {
       navigator.permissions.query({ name: 'geolocation' }).then((result) => {
         if (result.state === 'granted' || result.state === 'prompt') {
           navigator.geolocation.getCurrentPosition(
-            (position) => {
+            async (position) => {
               const { latitude, longitude } = position.coords;
               setLatitude(latitude);
               setLongitude(longitude);
-              setAddress('');
+  
+              // Call reverse geocoding API
+              try {
+                const response = await fetch(
+                  `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+                );
+                const data = await response.json();
+                if (data && data.display_name) {
+                  setAddress(data.display_name); // Populate the address field
+                }
+              } catch (error) {
+                console.error('Error fetching address:', error);
+                setAddress(''); // Default to empty if an error occurs
+              }
+  
               setShowMap(true);
             },
             (error) => {
@@ -52,7 +66,7 @@ const ShareLocation = () => {
       alert('Geolocation is not supported by this browser.');
     }
   };
-
+  
   const handleRemoveMap = () => {
     setShowMap(false);
     setLatitude(null);

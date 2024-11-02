@@ -32,30 +32,31 @@ class Store extends Model
     public function getAllStores(bool $withLocation = true)
     {
         if ($withLocation) {
-            return $this->with('location')->get();
+            return $this->with(['location', 'user.personalInformation:firstname,lastname,user_id'])->get();
         }
 
-        return $this->all();
+        return $this->with('user.personalInformation:firstname,lastname,user_id')->get();
     }
+
 
     // Update a store
     public function updateStore(int $id, array $storeData)
-{
-    $store = $this->find($id);
+    {
+        $store = $this->find($id);
 
-    if ($store) {
-        // If the location needs to be updated
-        if (isset($storeData['location'])) {
-            $store->location->update($storeData['location']);
+        if ($store) {
+            // If the location needs to be updated
+            if (isset($storeData['location'])) {
+                $store->location->update($storeData['location']);
+            }
+
+            // Update the store data
+            $store->update($storeData);
+            return $store;
         }
 
-        // Update the store data
-        $store->update($storeData);
-        return $store;
+        return false;
     }
-
-    return false;
-}
 
 
     // Delete a store

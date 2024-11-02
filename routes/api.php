@@ -31,8 +31,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::put('/users/{id}/update-bio&skills', [UserApiController::class, 'updateUserBioSkills']);
 
-
-    Route::get('/stores', [StoreController::class, 'getAllStores']);
+    Route::get('/search-stores', [StoreController::class, 'searchStores']);
+    Route::get('/getstores', [StoreController::class, 'getAllStores']);
     Route::post('/stores', [StoreController::class, 'saveStore']);
     Route::put('/stores/{id}', [StoreController::class, 'updateStore']);
     Route::delete('/stores/{id}', [StoreController::class, 'deleteStore']);
@@ -53,6 +53,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/notifications/{requestId}/decline', [RequestController::class, 'decline']);
 
     Route::get('/userq/{userId}', [UserApiController::class, 'getUserData']);
+
+    Route::get('/search-stores', [StoreController::class, 'searchStores']);
 });
 
 

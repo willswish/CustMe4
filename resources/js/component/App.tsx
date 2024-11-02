@@ -10,6 +10,7 @@ import { UserProfileProvider } from './context/UserProfileContext';
 import { StoreProvider } from './context/StoreContext';
 import { ChatProvider } from './context/ChatContext';
 import { ClientProfileProvider } from './context/ClientProfileContext'; 
+import { SearchProvider } from './context/SearchContext';
 
 const App = () => {
     return (
@@ -23,7 +24,9 @@ const App = () => {
                                     <ChatProvider>
                                         <TaskProvider>
                                             <ClientProfileProvider>
-                                                <Routes />
+                                                <SearchProvider>
+                                                    <Routes />
+                                                </SearchProvider>
                                             </ClientProfileProvider>
                                         </TaskProvider>
                                     </ChatProvider>

@@ -51,7 +51,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
   const fetchChats = async () => {
     if (!user) return;
-    console.log("Fetching chats...");
+    // console.log("Fetching chats...");
     const startFetchTime = performance.now();
     try {
       const response = await apiService.get('/chats', {
@@ -64,17 +64,17 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         setFirstChatId(response.data[0].id);
       }
     } catch (error) {
-      console.error('Error fetching chats', error);
+      // console.error('Error fetching chats', error);
       setError("Failed to fetch chats.");
     } finally {
       const endFetchTime = performance.now();
-      console.log("Chats fetched in:", endFetchTime - startFetchTime, "ms");
+      // console.log("Chats fetched in:", endFetchTime - startFetchTime, "ms");
     }
   };
 
   const fetchUserChatList = async () => {
     if (!user) return;
-    console.log("Fetching user chat list...");
+    // console.log("Fetching user chat list...");
     const startFetchTime = performance.now();
     try {
       const response = await apiService.get('/user-chat-list', {
@@ -84,17 +84,17 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       });
       setUserChatList(response.data || []);
     } catch (error) {
-      console.error('Error fetching user chat list', error);
+      // console.error('Error fetching user chat list', error);
       setError("Failed to fetch user chat list.");
     } finally {
       const endFetchTime = performance.now();
-      console.log("User chat list fetched in:", endFetchTime - startFetchTime, "ms");
+      // console.log("User chat list fetched in:", endFetchTime - startFetchTime, "ms");
     }
   };
 
   const sendMessage = async (content: string, recipientId: number, file?: File) => {
     if (!user) {
-      console.error('User is not authenticated.');
+      // console.error('User is not authenticated.');
       return;
     }
 
@@ -115,7 +115,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       newMessageRef.current = true;
       await fetchChats();
     } catch (error) {
-      console.error('Error sending message', error);
+      // console.error('Error sending message', error);
     }
   };
 
@@ -136,7 +136,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         },
       },
     });
-    console.log("Authenticated user:", user); // Check if user is authenticate
+    // console.log("Authenticated user:", user); // Check if user is authenticate
     if (user?.id) {
       echo.private(`private-chat.${user.id}`)
         .listen('.message-sent', (data: any) => {
@@ -144,7 +144,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           setChats((prevChats) => [...prevChats, data]);
         })
         .error((error: any) => {
-          console.error('Error connecting to Pusher:', error);
+          // console.error('Error connecting to Pusher:', error);
         });
     }
 

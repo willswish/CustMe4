@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
@@ -20,33 +21,33 @@ class StoreController extends Controller
     }
 
     public function saveStore(Request $request)
-{
-    // Log the incoming request data
-    Log::info('Incoming store creation request:', $request->all());
+    {
+        // Log the incoming request data
+        Log::info('Incoming store creation request:', $request->all());
 
-    // Validate the store data along with location details
-    $validator = Validator::make($request->all(), [
-        'storename' => 'required|string|max:255',
-        'description' => 'nullable|string',
-        'location.longitude' => 'required|numeric',
-        'location.latitude' => 'required|numeric',
-        'location.address' => 'required|string|max:255',
-        'user_id' => 'required|exists:users,id',
-    ]);
+        // Validate the store data along with location details
+        $validator = Validator::make($request->all(), [
+            'storename' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'location.longitude' => 'required|numeric',
+            'location.latitude' => 'required|numeric',
+            'location.address' => 'required|string|max:255',
+            'user_id' => 'required|exists:users,id',
+        ]);
 
-    if ($validator->fails()) {
-        Log::warning('Store creation failed due to validation errors:', $validator->errors()->toArray());
-        return response()->json(['error' => $validator->errors()], 422);
+        if ($validator->fails()) {
+            Log::warning('Store creation failed due to validation errors:', $validator->errors()->toArray());
+            return response()->json(['error' => $validator->errors()], 422);
+        }
+
+        // Call the createStore method on an instance of the Store model
+        $store = $this->storeModel->createStore($request->all());
+
+        // Log the successful store creation with the store ID
+        Log::info('Store created successfully with ID:', ['store_id' => $store->id]);
+
+        return response()->json(['message' => 'Store Added', 'store' => $store], 200);
     }
-
-    // Call the createStore method on an instance of the Store model
-    $store = $this->storeModel->createStore($request->all());
-
-    // Log the successful store creation with the store ID
-    Log::info('Store created successfully with ID:', ['store_id' => $store->id]);
-
-    return response()->json(['message' => 'Store Added', 'store' => $store], 200);
-}
 
 
     public function getAllStores()
@@ -104,5 +105,17 @@ class StoreController extends Controller
         }
 
         return response()->json(['error' => 'Store Not Found'], 404);
+    }
+    public function searchStores(Request $request)
+    {
+        $query = $request->input('query');
+        $stores = Store::with('location')
+            ->where('storename', 'LIKE', "%{$query}%")
+            ->orWhereHas('location', function ($q) use ($query) {
+                $q->where('address', 'LIKE', "%{$query}%");
+            })
+            ->get();
+
+        return response()->json($stores);
     }
 }

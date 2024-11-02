@@ -16,6 +16,7 @@ import NotificationsDropdown from '../components/NotificationsDropDown';
 import Avatar from '@mui/material/Avatar';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import SearchBar from '../../../views/searchbar';
 
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -23,8 +24,13 @@ import ChatIcon from '@mui/icons-material/Chat';
 import BrushIcon from '@mui/icons-material/Brush';
 import PrintIcon from '@mui/icons-material/Print';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import MapIcon from '@mui/icons-material/Map';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  onLocationSelect?: (location: any) => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onLocationSelect }) => {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false); // Sidebar starts collapsed
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -67,18 +73,8 @@ const Header: React.FC = () => {
             </div>
           </Box>
 
-          <Box sx={{ flexGrow: 4, display: 'flex', justifyContent: 'flex-start' }}>
-            <div className="relative w-full max-w-md">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-                <SearchIcon className="text-black" />
-              </div>
-              <InputBase
-                placeholder="Search…"
-                className="pl-12 pr-4 py-2 rounded-full bg-gray-200 text-black w-full"
-                inputProps={{ 'aria-label': 'search' }}
-              />
-            </div>
-          </Box>
+           {/* Replace the original search bar code with the imported SearchBar component */}
+           <SearchBar onLocationSelect={onLocationSelect} />
 
           <Box display="flex" alignItems="center" sx={{ ml: 'auto' }}>
             <NotificationsDropdown />
@@ -213,6 +209,8 @@ const Header: React.FC = () => {
               </ListItem>
             </NavLink>
 
+        
+        
             {/* Add Post */}
             <NavLink to="/posts" className="text-white">
               <ListItem>
@@ -223,6 +221,15 @@ const Header: React.FC = () => {
               </ListItem>
             </NavLink>
           </List>
+
+      <NavLink to="/getlocation" className="text-white">
+      <ListItem>
+        <ListItemIcon sx={{ color: 'white' }}>
+          <MapIcon />
+        </ListItemIcon>
+        {isSidebarExpanded && <ListItemText primary="Nearby" />}
+      </ListItem>
+    </NavLink>
 
           {/* Logout */}
           <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'center' }}>

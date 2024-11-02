@@ -24,6 +24,7 @@ import ClientPost from '../views/forms/Admin/ClientPostForm';
 import ClientProfile from '../views/forms/Admin/ClientProfileForm';
 import DesignerInformationPage from '../views/designerInfo';
 import PrintingInformationPage from '../views/printingInfo';
+import MapView from '../views/mapview';
 
 
 const AppRoutes = () => {
@@ -49,6 +50,7 @@ const AppRoutes = () => {
       {/* Protected routes for User */}
       <Route element={<ProtectedRoutes roles={['User']} />}>
         <Route path="/user" element={<UserHome />} />
+        <Route path="/getlocation" element={<MapView />} />
         {/* <Route path="/List-of-Desinger&Printing-Provider" element={<ArtistPrintingProviders />} /> */}
       </Route>
 
