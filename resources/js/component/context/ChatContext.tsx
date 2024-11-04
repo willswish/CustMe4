@@ -47,12 +47,10 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
   const newMessageRef = useRef<boolean>(false);
 
-  const authToken = localStorage.getItem('authToken'); // Retrieve authToken from localStorage
+  const authToken = localStorage.getItem('authToken');
 
   const fetchChats = async () => {
     if (!user) return;
-    // console.log("Fetching chats...");
-    const startFetchTime = performance.now();
     try {
       const response = await apiService.get('/chats', {
         headers: {
@@ -64,18 +62,12 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         setFirstChatId(response.data[0].id);
       }
     } catch (error) {
-      // console.error('Error fetching chats', error);
       setError("Failed to fetch chats.");
-    } finally {
-      const endFetchTime = performance.now();
-      // console.log("Chats fetched in:", endFetchTime - startFetchTime, "ms");
     }
   };
 
   const fetchUserChatList = async () => {
     if (!user) return;
-    // console.log("Fetching user chat list...");
-    const startFetchTime = performance.now();
     try {
       const response = await apiService.get('/user-chat-list', {
         headers: {
@@ -84,19 +76,12 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       });
       setUserChatList(response.data || []);
     } catch (error) {
-      // console.error('Error fetching user chat list', error);
       setError("Failed to fetch user chat list.");
-    } finally {
-      const endFetchTime = performance.now();
-      // console.log("User chat list fetched in:", endFetchTime - startFetchTime, "ms");
     }
   };
 
   const sendMessage = async (content: string, recipientId: number, file?: File) => {
-    if (!user) {
-      // console.error('User is not authenticated.');
-      return;
-    }
+    if (!user) return;
 
     const formData = new FormData();
     formData.append('content', content);
@@ -115,28 +100,30 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       newMessageRef.current = true;
       await fetchChats();
     } catch (error) {
-      // console.error('Error sending message', error);
+      // Handle the error as necessary
     }
   };
 
   useEffect(() => {
     fetchUserChatList();
     fetchChats();
-
-    window.Pusher = Pusher;
-    const echo = new Echo({
-      broadcaster: 'pusher',
-      key: '087ae63043c8feb92728',
+    const API_BASE_URL = (window as any).env.API_BASE_URL;
+    const pusher = new Pusher('087ae63043c8feb92728', {
       cluster: 'ap1',
       forceTLS: true,
-      authEndpoint: '/broadcasting/auth',
+    });
+
+    const echo = new Echo({
+      broadcaster: 'pusher',
+      client: pusher,
+      authEndpoint: `${API_BASE_URL}/broadcasting/auth`,
       auth: {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
       },
     });
-    // console.log("Authenticated user:", user); // Check if user is authenticate
+
     if (user?.id) {
       echo.private(`private-chat.${user.id}`)
         .listen('.message-sent', (data: any) => {
@@ -144,12 +131,13 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           setChats((prevChats) => [...prevChats, data]);
         })
         .error((error: any) => {
-          // console.error('Error connecting to Pusher:', error);
+          console.error('Error connecting to Pusher:', error);
         });
     }
 
     return () => {
       echo.disconnect();
+      pusher.disconnect(); // Disconnect Pusher on cleanup
     };
   }, [user]);
 

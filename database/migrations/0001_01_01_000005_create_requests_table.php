@@ -24,6 +24,9 @@ return new class extends Migration
             $table->unsignedBigInteger('target_user_id')->nullable();
             $table->foreign('target_user_id')->references('id')->on('users')->onDelete('cascade');
 
+            $table->unsignedBigInteger('post_id')->nullable();
+            $table->foreign('post_id')->references('post_id')->on('posts')->onDelete('cascade');
+
             $table->text('request_content')->nullable();
             $table->integer('duration_days')->nullable();
             $table->integer('duration_minutes')->nullable();

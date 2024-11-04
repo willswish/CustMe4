@@ -52,10 +52,9 @@ const ClientProfile = () => {
     <>
       <Header />
       <div className="ml-48 mt-16 p-8 bg-gray-50">
-        
         {/* Profile Section */}
-        <div className="relative mb-6">
-          <div className="relative h-72 w-full">
+        <Box className="relative mb-6 bg-white shadow-lg rounded-lg p-4">
+          <div className="relative h-72 w-full mb-4">
             <img
               src={coverPhoto}
               alt="Cover"
@@ -70,43 +69,44 @@ const ClientProfile = () => {
               className="shadow-lg"
             />
           </div>
-        </div>
-        
-        {/* Edit Profile Button */}
-        <div className="flex items-center mb-4" style={{ marginLeft: '140px', marginTop: '-16px' }}>
-          <Typography variant="h5" className="font-bold">{`${profile.personal_information?.firstname || ''} ${profile.personal_information?.lastname || ''}`}</Typography>
-          {canEditProfile && (
-            <div className="ml-auto mr-8">
+          <div className="mt-16 ml-32">
+            <Typography variant="h5" className="font-bold">
+              {`${profile.personal_information?.firstname || ''} ${profile.personal_information?.lastname || ''}`}
+            </Typography>
+            {canEditProfile && (
               <Button
                 variant="outlined"
                 startIcon={<EditIcon />}
                 color="primary"
                 onClick={() => setOpenEditModal(true)}
+                className="mt-2"
               >
                 Edit profile
               </Button>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </Box>
 
-        {/* Side-by-side layout for AboutMe and Image Carousel */}
-        <Box display="flex" gap={4} mt={8}>
+        {/* About Me and Carousel Sections */}
+        <Box display="flex" gap={4} mt={4}>
           {/* About Me Section */}
           {isAllowedRole && (
-            <Box flex={1} p={2} bgcolor="white" borderRadius={2} boxShadow={2}>
+            <Box flex={1} p={2} bgcolor="white" borderRadius={2} boxShadow={2} className="shadow-lg">
+              <Typography variant="h6" gutterBottom>About Me</Typography>
               <AboutMe />
             </Box>
           )}
 
           {/* Image Carousel Section */}
-          <Box flex={2} className="relative bg-white shadow-lg rounded-lg overflow-hidden">
+          <Box flex={1.5} className="shadow-lg rounded-lg p-2 bg-white">
+            <Typography variant="h6" gutterBottom>Image Gallery</Typography>
             <Carousel>
               {images.map((src, index) => (
                 <img
                   key={index}
                   src={src}
                   alt={`Image ${index}`}
-                  className="w-full h-48 object-cover"
+                  className="w-full h-48 object-cover rounded-md"
                 />
               ))}
             </Carousel>

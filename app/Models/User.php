@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable
 {
@@ -72,9 +73,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserCertificate::class, 'user_id');
     }
-    public function skills()
+    public function skills(): BelongsToMany
     {
-        return $this->hasMany(Skill::class, 'user_skills', 'user_id', 'skill_id');
+        return $this->belongsToMany(Skill::class, 'user_skills', 'user_id', 'skill_id');
     }
     public function Userskills()
     {
@@ -84,9 +85,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserPrintingSkill::class, 'user_id');
     }
-    public function printingSkills()
+    public function printingSkills(): BelongsToMany
     {
-        return $this->hasMany(PrintingSkill::class, 'user_printing_skills', 'user_id', 'printing_skill_id');
+        return $this->belongsToMany(PrintingSkill::class, 'user_printing_skills', 'user_id', 'printing_skill_id');
     }
 
     public function portfolios()

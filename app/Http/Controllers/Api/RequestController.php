@@ -6,8 +6,13 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Request as UserRequest;
 use App\Models\Notification;
+use App\Models\Timer;
 use App\Events\NotificationEvent;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+use App\Services\TimerService;
+
 
 
 class RequestController extends Controller
@@ -23,6 +28,7 @@ class RequestController extends Controller
             'request_content' => 'required|string', // Validate request content for the requests table
             'duration_days' => 'nullable|integer|min:0', // Validate duration days
             'duration_minutes' => 'nullable|integer|min:0', // Validate duration minutes
+
         ]);
 
         // Debug log the validated input
@@ -37,6 +43,7 @@ class RequestController extends Controller
         // Log the payload that will be sent to the database
         Log::info('UserRequest payload:', [
             'user_id' => $validated['user_id'],
+            'post_id' => $validated['post_id'],
             'target_user_id' => $validated['target_user_id'],
             'request_content' => $validated['request_content'],
             'duration_days' => $validated['duration_days'] ?? null,
@@ -47,6 +54,7 @@ class RequestController extends Controller
         // Create the user request and include duration information
         $userRequest = UserRequest::create([
             'user_id' => $validated['user_id'],
+            'post_id' => $validated['post_id'],
             'target_user_id' => $validated['target_user_id'],
             'request_type' => 'product_request',
             'status' => 'pending',
@@ -54,6 +62,7 @@ class RequestController extends Controller
             'duration_days' => $validated['duration_days'] ?? null,
             'duration_minutes' => $validated['duration_minutes'] ?? null,
             'completion_deadline' => $completionDeadline, // Set the completion deadline
+
         ]);
 
         // Log the created user request for debugging
@@ -93,34 +102,47 @@ class RequestController extends Controller
         try {
             // Find the request by ID
             $userRequest = UserRequest::findOrFail($requestId);
-            $userRequest->status = 'accepted'; // Update the status
+            $userRequest->status = 'accepted';
             $userRequest->save();
+
+            // Calculate start time and deadline
+            $startTime = Carbon::now();
+            $deadline = $startTime->copy()->addDays($userRequest->duration_days)->addMinutes($userRequest->duration_minutes);
+
+            // Create timer entry
+            Timer::create([
+                'request_id' => $userRequest->request_id,
+                'start_time' => $startTime,
+                'deadline' => $deadline,
+                'duration_days' => $userRequest->duration_days,
+                'duration_minutes' => $userRequest->duration_minutes,
+            ]);
 
             // Create a notification for the sender
             $notification = Notification::create([
-                'content' => 'User @' . $request->user()->username . ' has accepted your request.',
-                'status' => 'unread',
-                'user_id' => $userRequest->user_id, // Notify the original sender
+                'content' => $request->user()->username . ' has accepted your request.',
+                'status' => 'accepted',
+                'user_id' => $userRequest->user_id,
                 'request_id' => $userRequest->request_id,
+                'created_at' => $startTime, // Set the created_at time to start time
             ]);
 
-            // Log notification creation and event firing
             Log::info('Accepted request and created notification: ' . json_encode($notification));
-
-            // Fire the event
             event(new NotificationEvent($notification));
-
-            Log::info('NotificationEvent successfully fired for request ID: ' . $requestId);
 
             return response()->json([
                 'message' => 'Request accepted, sender notified in real time.',
-                'event' => 'NotificationEvent fired successfully'
+                'notification' => $notification,  // Return the notification data
+                'start_time' => $startTime,       // Include the start time
+                'deadline' => $deadline           // Include the deadline
             ], 200);
         } catch (\Exception $e) {
             Log::error('Error in accept method: ' . $e->getMessage());
             return response()->json(['error' => 'Could not process request'], 500);
         }
     }
+
+
 
     public function decline(Request $request, $requestId)
     {
@@ -141,5 +163,22 @@ class RequestController extends Controller
         event(new NotificationEvent($notification)); // Fire event to notify real-time
 
         return response()->json(['message' => 'Request declined and sender notified.'], 200);
+    }
+    public function getAllRequests(Request $request)
+    {
+        // Get the logged-in user
+        $user = Auth::user();
+
+        // Fetch all requests related to the current user
+        // You can modify this to fit your application's requirement: e.g. only requests for specific roles
+        $requests = UserRequest::where('target_user_id', $user->id)
+            ->orWhere('user_id', $user->id)
+            ->with('user', 'targetUser') // Load relationships if needed
+            ->get();
+
+        // Return the requests with necessary details
+        return response()->json([
+            'requests' => $requests,
+        ]);
     }
 }

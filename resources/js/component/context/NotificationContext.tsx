@@ -4,19 +4,25 @@ import apiService from '../services/apiService';
 import { useAuth } from './AuthContext';
 
 interface Notification {
-  id: number; // Notification ID
-  request_id: number; // Corresponding request ID
+  id: number;
+  request_id: number;
   content: string;
   created_at: string;
-  status: string; // 'pending', 'accepted', or 'declined'
+  status: string;
   user_id: number;
   target_user_id: number;
+  price: string;
+  duration_days: number;
+  duration_minutes: number;
+  request_content: string;
 }
 
 interface NotificationContextProps {
   notifications: Notification[];
   acceptNotification: (id: number) => Promise<void>;
   declineNotification: (id: number) => Promise<void>;
+  selectedNotification: Notification | null;
+  setSelectedNotification: (id: number | null) => void;
 }
 
 const NotificationContext = createContext<NotificationContextProps | undefined>(undefined);
@@ -28,28 +34,37 @@ interface NotificationProviderProps {
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [selectedNotification, setSelectedNotificationData] = useState<Notification | null>(null);
 
   useEffect(() => {
     if (!user) {
+      console.log('User not logged in, skipping notification fetch.');
       return;
     }
 
     const fetchNotifications = async () => {
       try {
+        console.log('Fetching notifications...');
         const response = await apiService.get('/notifications', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('authToken')}`,
           },
         });
-        setNotifications(response.data.notifications || []);
+
+        console.log('Response from /notifications:', response.data);
+
+        if (response.data && response.data.notifications) {
+          console.log('Notifications data:', response.data.notifications);
+          setNotifications(response.data.notifications);
+        } else {
+          console.warn('No notifications found in response.');
+        }
       } catch (error) {
-        // console.error('Error fetching notifications:', error);
+        console.error('Error fetching notifications:', error);
       }
     };
 
     fetchNotifications();
-
-    // Pusher.logToConsole = true;
 
     const pusher = new Pusher('087ae63043c8feb92728', {
       cluster: 'ap1',
@@ -58,12 +73,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
     const channel = pusher.subscribe('notifications');
 
-    channel.bind('pusher:subscription_succeeded', () => {
-      // console.log('Successfully subscribed to the notifications channel');
-    });
-
     channel.bind('new-notification', (data: any) => {
-      // console.log('New notification received:', data);
+      console.log('New notification received:', data.notification);
       setNotifications((prevNotifications) => [...prevNotifications, data.notification]);
     });
 
@@ -75,22 +86,25 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   const acceptNotification = async (requestId: number) => {
     try {
-      await apiService.post(`/notifications/${requestId}/accept`, null, {
+      const response = await apiService.post(`/notifications/${requestId}/accept`, null, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('authToken')}`,
         },
       });
-
-      // Update the status of the notification
+  
+      const updatedNotification = response.data.notification;
+  
+      // Update the notifications state with the accepted status and timing data
       setNotifications((prevNotifications) =>
         prevNotifications.map((notification) =>
-          notification.request_id === requestId ? { ...notification, status: 'accepted' } : notification
+          notification.request_id === requestId ? { ...notification, ...updatedNotification } : notification
         )
       );
     } catch (error) {
-      // console.error('Error accepting notification:', error.response ? error.response.data : error.message);
+      console.error('Error accepting notification:', error);
     }
   };
+  
 
   const declineNotification = async (requestId: number) => {
     try {
@@ -100,19 +114,33 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         },
       });
 
-      // Update the status of the notification
+      console.log(`Notification ${requestId} declined.`);
       setNotifications((prevNotifications) =>
         prevNotifications.map((notification) =>
           notification.request_id === requestId ? { ...notification, status: 'declined' } : notification
         )
       );
     } catch (error) {
-      // console.error('Error declining notification:', error.response ? error.response.data : error.message);
+      console.error('Error declining notification:', error);
     }
   };
 
+  const setSelectedNotification = (id: number | null) => {
+    const notification = notifications.find((n) => n.request_id === id) || null;
+    console.log('Setting selected notification:', notification);
+    setSelectedNotificationData(notification);
+  };
+
   return (
-    <NotificationContext.Provider value={{ notifications, acceptNotification, declineNotification }}>
+    <NotificationContext.Provider
+      value={{
+        notifications,
+        acceptNotification,
+        declineNotification,
+        selectedNotification,
+        setSelectedNotification,
+      }}
+    >
       {children}
     </NotificationContext.Provider>
   );

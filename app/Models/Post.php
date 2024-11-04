@@ -10,7 +10,7 @@ class Post extends Model
     use HasFactory;
 
     protected $primaryKey = 'post_id';
-    protected $fillable = ['title', 'content', 'user_id'];
+    protected $fillable = ['title', 'content', 'price', 'user_id'];
 
     public function createPost(array $task)
     {
@@ -25,5 +25,9 @@ class Post extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+    public function requests()
+    {
+        return $this->hasMany(Request::class, 'post_id', 'post_id');
     }
 }

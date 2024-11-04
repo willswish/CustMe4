@@ -23,6 +23,8 @@ class Request extends Model
         'duration_days',
         'duration_minutes',
         'completion_deadline',
+        'post_id'
+
     ];
 
     public function user()
@@ -38,5 +40,17 @@ class Request extends Model
     public function notifications()
     {
         return $this->hasMany(Notification::class, 'request_id', 'request_id'); // 'request_id' as foreign key and primary key
+    }
+    public function payment()
+    {
+        return $this->hasOne(Payment::class, 'request_id', 'request_id');
+    }
+    public function post()
+    {
+        return $this->belongsTo(Post::class, 'post_id', 'post_id');
+    }
+    public function timer()
+    {
+        return $this->hasOne(Timer::class, 'request_id');
     }
 }

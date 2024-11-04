@@ -151,8 +151,9 @@ class UserApiController extends Controller
         // Step 4: Attach General Skills if provided
         if ($request->filled('skills')) {
             Log::info('Attaching skills to user ID:', [$user->id]);
-            $user->skills()->attach($request->skills); // Attaches skills to the user
+            $user->skills()->attach($request->skills); // This works for BelongsToMany
         }
+
 
         // Step 5: Attach Printing Skills if provided
         if ($request->filled('printing_skills')) {

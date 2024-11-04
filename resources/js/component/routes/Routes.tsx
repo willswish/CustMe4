@@ -25,6 +25,8 @@ import ClientProfile from '../views/forms/Admin/ClientProfileForm';
 import DesignerInformationPage from '../views/designerInfo';
 import PrintingInformationPage from '../views/printingInfo';
 import MapView from '../views/mapview';
+import DesignerPostForm from '../views/forms/Admin/designerForm';
+import ProviderPostForm from '../views/forms/Admin/provideForm';
 
 
 const AppRoutes = () => {
@@ -79,6 +81,9 @@ const AppRoutes = () => {
         <Route path="/notifications" element={<RequestForm/>} />
         <Route path="/clientpost" element={<ClientPost/>} />
         <Route path="/clients/:id/profile" element={<ClientProfile/>} />
+        <Route path="/designerpost" element={<DesignerPostForm />} />
+        <Route path="/providerpost" element={<ProviderPostForm />} />
+
 
       
         
@@ -89,6 +94,7 @@ const AppRoutes = () => {
       <Route element={<ProtectedRoutes roles={['Admin', 'Graphic Designer', 'Printing Shop']} />}>
         <Route path="/posts" element={<CreatePostForm />} />
         <Route path="/users/:id/profile" element={<UserProfileForm />} />
+
 
 
 

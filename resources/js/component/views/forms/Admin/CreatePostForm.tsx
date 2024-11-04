@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import Header from '../components/header';
 import { useAuth } from '../../../context/AuthContext';
-import { usePostContext } from '../../../context/PostContext'; // Import usePostContext
+import { usePostContext } from '../../../context/PostContext';
 import apiService from '../../../services/apiService';
-
 
 const CreatePostForm: React.FC = () => {
   const { user } = useAuth();
-  const { addPost } = usePostContext(); // Get addPost from context
+  const { addPost } = usePostContext();
   const [title, setTitle] = useState<string>('');
   const [content, setContent] = useState<string>('');
+  const [price, setPrice] = useState<number | ''>('');
   const [images, setImages] = useState<File[]>([]);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
@@ -22,13 +22,17 @@ const CreatePostForm: React.FC = () => {
     setContent(e.target.value);
   };
 
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPrice(parseFloat(e.target.value));
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
       const validImages = Array.from(files).filter((file): file is File =>
         ['image/jpeg', 'image/png', 'image/gif'].includes(file.type) && file.size <= 2048 * 1024
       );
-      
+
       setImages(prevImages => [...prevImages, ...validImages]);
     }
   };
@@ -40,15 +44,15 @@ const CreatePostForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Check if title and content are not empty
-    if (!title || !content) {
-      setError('Title and content are required');
+    if (!title || !content || price === '') {
+      setError('Title, content, and price are required');
       return;
     }
 
     const formData = new FormData();
     formData.append('title', title);
     formData.append('content', content);
+    formData.append('price', price.toString());
     images.forEach(image => {
       formData.append('images[]', image);
     });
@@ -64,9 +68,10 @@ const CreatePostForm: React.FC = () => {
         setSuccess('Post created successfully');
         setTitle('');
         setContent('');
+        setPrice('');
         setImages([]);
         setError('');
-        addPost(response.data); // Update context with the new post
+        addPost(response.data);
       } else {
         setError('Failed to create post');
         setSuccess('');
@@ -101,6 +106,17 @@ const CreatePostForm: React.FC = () => {
                   placeholder={`What's on your mind, ${user ? user.username : 'User'}?`}
                   value={content}
                   onChange={handleContentChange}
+                />
+              </div>
+              <div>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring"
+                  placeholder="Price (e.g. 100.00)"
+                  value={price}
+                  onChange={handlePriceChange}
                 />
               </div>
               <div>

@@ -25,12 +25,14 @@ class PostController extends Controller
             'title' => 'required|string|max:255',
             'content' => 'required|string',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'price' => 'required|numeric|min:0',
         ]);
 
         try {
             $post = $this->postModel->create([
                 'title' => $request->title,
                 'content' => $request->content,
+                'price' => $request->price,
                 'user_id' => Auth::id(),
             ]);
 
@@ -45,17 +47,6 @@ class PostController extends Controller
                     ]);
                 }
             }
-            // if ($request->hasFile('certificate')) {
-            //     Log::info('Saving certificate for user ID:', [$user->id]);
-            //     $certificateFile = $request->file('certificate');
-            //     $path = $certificateFile->store('certificates', 'public'); // Store in public storage
-            //     $this->certificate->create([
-            //         'user_id' => $user->id,
-            //         'file_path' => $path,
-            //         'file_name' => $certificateFile->getClientOriginalName(),
-            //     ]);
-            //     Log::info('Certificate saved successfully for user ID:', [$user->id]);
-            // }
 
 
             return response()->json(['post' => $post], 201);

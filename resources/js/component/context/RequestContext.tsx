@@ -12,6 +12,7 @@ interface RequestPayload {
   duration_days?: number; // Optional field for duration days
   duration_minutes?: number; // Optional field for duration minutes
   completion_deadline?: string; // Optional field for completion deadline
+
 }
 
 interface RequestContextProps {
@@ -19,6 +20,7 @@ interface RequestContextProps {
     postId: number,
     postUserId: number,
     requestContent: string, // Added to accept request content
+  
     durationDays?: number,   // Added to accept duration days
     durationMinutes?: number  // Added to accept duration minutes
   ) => Promise<void>;
@@ -37,8 +39,9 @@ export const RequestProvider: React.FC<RequestProviderProps> = ({ children }) =>
     postId: number,
     postUserId: number,
     requestContent: string, // Accept request content
+   
     durationDays?: number,   // Accept duration days
-    durationMinutes?: number  // Accept duration minutes
+    durationMinutes?: number // Accept duration minutes
   ) => {
     if (user) {
       try {
@@ -54,6 +57,7 @@ export const RequestProvider: React.FC<RequestProviderProps> = ({ children }) =>
           duration_days: durationDays,      // Include duration days
           duration_minutes: durationMinutes, // Include duration minutes
           completion_deadline: completionDeadline, // Include completion deadline
+        
         };
 
         // Log the payload before sending

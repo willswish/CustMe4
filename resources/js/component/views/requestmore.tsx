@@ -6,8 +6,9 @@ interface RequestModalProps {
   handleClose: () => void;
   handleSubmit: () => Promise<void>;
   setRequestContent: Dispatch<SetStateAction<string>>;
-  setDurationDays: Dispatch<SetStateAction<number | undefined>>; // Change to number
-  setDurationMinutes: Dispatch<SetStateAction<number | undefined>>; // Change to number
+  setDurationDays: Dispatch<SetStateAction<number | undefined>>;
+  setDurationMinutes: Dispatch<SetStateAction<number | undefined>>;
+// Add the setPrice prop
 }
 
 const RequestModal: React.FC<RequestModalProps> = ({
@@ -17,10 +18,12 @@ const RequestModal: React.FC<RequestModalProps> = ({
   setRequestContent,
   setDurationDays,
   setDurationMinutes,
+ // Add setPrice to props
 }) => {
   const [requestContent, setLocalRequestContent] = useState('');
   const [durationDays, setLocalDurationDays] = useState('');
   const [durationMinutes, setLocalDurationMinutes] = useState('');
+  
 
   useEffect(() => {
     // Reset local state when modal closes
@@ -34,11 +37,13 @@ const RequestModal: React.FC<RequestModalProps> = ({
   const isSubmitDisabled = !requestContent || !durationDays || !durationMinutes;
 
   const handleSubmitWrapper = async () => {
-    setRequestContent(requestContent); 
+    setRequestContent(requestContent);
 
     // Parse duration values
-    setDurationDays(durationDays ? parseInt(durationDays) : undefined); 
-    setDurationMinutes(durationMinutes ? parseInt(durationMinutes) : undefined); 
+    setDurationDays(durationDays ? parseInt(durationDays) : undefined);
+    setDurationMinutes(durationMinutes ? parseInt(durationMinutes) : undefined);
+    
+    
 
     await handleSubmit(); // Call the handleSubmit passed from the parent
     handleClose(); // Close the modal after submitting
@@ -70,7 +75,7 @@ const RequestModal: React.FC<RequestModalProps> = ({
           value={durationDays}
           onChange={(e) => {
             setLocalDurationDays(e.target.value);
-            setDurationDays(e.target.value); // Update context state
+            setDurationDays(e.target.value ? parseInt(e.target.value) : undefined); // Update context state
           }}
         />
         <TextField
@@ -82,9 +87,10 @@ const RequestModal: React.FC<RequestModalProps> = ({
           value={durationMinutes}
           onChange={(e) => {
             setLocalDurationMinutes(e.target.value);
-            setDurationMinutes(e.target.value); // Update context state
+            setDurationMinutes(e.target.value ? parseInt(e.target.value) : undefined); // Update context state
           }}
         />
+      
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} color="primary">

@@ -11,6 +11,7 @@ import { StoreProvider } from './context/StoreContext';
 import { ChatProvider } from './context/ChatContext';
 import { ClientProfileProvider } from './context/ClientProfileContext'; 
 import { SearchProvider } from './context/SearchContext';
+import { DesignerProvider } from './context/Desing&ProviderContext';
 
 const App = () => {
     return (
@@ -25,7 +26,9 @@ const App = () => {
                                         <TaskProvider>
                                             <ClientProfileProvider>
                                                 <SearchProvider>
-                                                    <Routes />
+                                                    <DesignerProvider>
+                                                        <Routes />
+                                                    </DesignerProvider>
                                                 </SearchProvider>
                                             </ClientProfileProvider>
                                         </TaskProvider>

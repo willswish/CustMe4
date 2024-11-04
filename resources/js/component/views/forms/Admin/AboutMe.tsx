@@ -45,24 +45,28 @@ function AboutMe() {
   const isOwnProfile = user?.id === profile?.id;
 
   return (
-    <div className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md w-full md:w-1/2 mx-auto">
-      <Avatar sx={{ bgcolor: '#2196f3', width: 80, height: 80 }} className="mb-4">
-        {profile?.username.charAt(0)}
-      </Avatar>
-      <Typography variant="h6" className="text-gray-800 font-bold mb-2">{profile?.username || 'User'}</Typography>
+    <Box flex={1} p={2} bgcolor="white" borderRadius={2} boxShadow={2} className="shadow-lg">
+      <Box display="flex" justifyContent="center" mb={4}>
+        <Avatar sx={{ bgcolor: '#2196f3', width: 80, height: 80 }}>
+          {profile?.username.charAt(0)}
+        </Avatar>
+      </Box>
+      <Typography variant="h6" className="text-gray-800 font-bold mb-2" align="center">
+        {profile?.username || 'User'}
+      </Typography>
 
-      <div className="flex items-center mb-2">
-        <Typography variant="body1" className="text-gray-600 mr-2">Skills:</Typography>
-        <Typography variant="body2" className="text-gray-600">{tempData.skills}</Typography>
-      </div>
+      <Box mb={2}>
+        <Typography variant="body1" className="text-gray-600" display="inline" mr={1}>Skills:</Typography>
+        <Typography variant="body2" className="text-gray-600" display="inline">{tempData.skills}</Typography>
+      </Box>
 
-      <div className="flex items-center mb-2">
-        <Typography variant="body1" className="text-gray-600 mr-2">Rating:</Typography>
+      <Box mb={2}>
+        <Typography variant="body1" className="text-gray-600" display="inline" mr={1}>Rating:</Typography>
         <Rating name="read-only" value={profile?.verified ? 4.8 : 4.0} readOnly precision={0.1} />
-      </div>
+      </Box>
 
-      <div className="flex items-center mb-2">
-        <Typography variant="body1" className="text-gray-600 mr-2">Location:</Typography>
+      <Box mb={2}>
+        <Typography variant="body1" className="text-gray-600" display="inline" mr={1}>Location:</Typography>
         <Typography
           variant="body2"
           className="text-blue-600 underline cursor-pointer"
@@ -70,9 +74,9 @@ function AboutMe() {
         >
           {profile?.stores[0]?.storename || 'Store Name Not Set'} - {profile?.stores[0]?.location?.address || 'Address Not Set'}
         </Typography>
-      </div>
+      </Box>
 
-      <Card className="w-full">
+      <Card className="w-full mt-2">
         <CardContent>
           <Typography variant="body1" className="text-gray-600 mb-2">About Me:</Typography>
           <Typography variant="body2" className="text-gray-600">{tempData.aboutMe}</Typography>
@@ -80,17 +84,18 @@ function AboutMe() {
       </Card>
 
       {isOwnProfile && (
-        <div className="mt-4">
+        <Box mt={4} textAlign="center">
           <Button variant="outlined" color="primary" onClick={handleEditClick} startIcon={<EditIcon />}>
             Edit
           </Button>
-        </div>
+        </Box>
       )}
 
       <Modal open={editModalOpen} onClose={() => setEditModalOpen(false)}>
         <Box
-          className="bg-white p-4 rounded-lg shadow-lg absolute"
+          className="bg-white p-4 rounded-lg shadow-lg"
           style={{
+            position: 'absolute',
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
@@ -111,8 +116,9 @@ function AboutMe() {
 
       <Modal open={mapModalOpen} onClose={() => setMapModalOpen(false)}>
         <Box
-          className="bg-white p-4 rounded-lg shadow-lg absolute"
+          className="bg-white p-4 rounded-lg shadow-lg"
           style={{
+            position: 'absolute',
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
@@ -135,7 +141,7 @@ function AboutMe() {
           </Button>
         </Box>
       </Modal>
-    </div>
+    </Box>
   );
 }
 

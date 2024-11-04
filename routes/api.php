@@ -8,10 +8,15 @@ use App\Http\Controllers\Api\UserApiController;
 use App\Http\Controllers\Api\StoreController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\SkillController;
+use App\Http\Controllers\Api\PaymentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Broadcast;
+
+
 
 Route::middleware(['auth:sanctum'])->group(function () {
+    Broadcast::routes();
     Route::get('/current-user', [UserApiController::class, 'currentUser']);
     Route::get('/users', [UserApiController::class, 'getUsers']);
     Route::post('/logout', [UserApiController::class, 'logout']);
@@ -55,6 +60,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/userq/{userId}', [UserApiController::class, 'getUserData']);
 
     Route::get('/search-stores', [StoreController::class, 'searchStores']);
+
+    Route::post('/broadcasting/auth', '\Illuminate\Broadcasting\BroadcastController@authenticate');
+
+    Route::post('/initiate-payment', [PaymentController::class, 'initiatePayment'])->name('payment.initiate');
+    Route::get('/payment-success', [PaymentController::class, 'paymentSuccess'])->name('payment.success');
+    Route::get('/payment-failed', [PaymentController::class, 'paymentFailed'])->name('payment.failed');
+
+    Route::get('/showrequests', [RequestController::class, 'getAllRequests']);
 });
 
 
