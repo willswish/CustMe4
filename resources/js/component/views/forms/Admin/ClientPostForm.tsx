@@ -3,8 +3,10 @@ import { Typography, Button, Avatar, IconButton, Menu, MenuItem } from '@mui/mat
 import { MoreVert as MoreVertIcon, ArrowBack as ArrowBackIcon, ArrowForward as ArrowForwardIcon } from '@mui/icons-material';
 import { usePostContext } from '../../../context/PostContext'; // Assuming your context path is correct
 import Header from '../components/header';
+import RequestModal from '../../requestmore'; // Import your request modal component
+import { useRequest } from '../../../context/RequestContext'; // Assuming your handleRequest function path is correct
 
-const PostCard = ({ post }) => {
+const PostCard = ({ post, onRequestSubmit }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0); // For tracking current image index
 
@@ -27,8 +29,6 @@ const PostCard = ({ post }) => {
   };
 
   return (
-    <>
-    <Header/>
     <div className="bg-white p-4 mb-4 rounded-md shadow-md max-w-md">
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center">
@@ -72,21 +72,57 @@ const PostCard = ({ post }) => {
         </div>
       )}
 
-      <Button variant="contained" color="warning" className="w-full">
+      <Button variant="contained" color="warning" className="w-full" onClick={() => onRequestSubmit(post)}>
         Interested
       </Button>
     </div>
-    </>
-   
   );
 };
 
 const ClientPost = () => {
+  const { handleRequest } = useRequest();
   const { posts, fetchClientPosts } = usePostContext();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<number | null>(null);
+  const [requestContent, setRequestContent] = useState('');
+  const [durationDays, setDurationDays] = useState<number | undefined>(undefined);
+  const [durationMinutes, setDurationMinutes] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     fetchClientPosts(1, 10); // Fetching the first 10 client posts when component mounts
   }, [fetchClientPosts]);
+
+  const handleRequestButtonClick = (post) => {
+    setSelectedPost(post.post_id);
+    setModalOpen(true);
+  };
+
+  const handleRequestSubmit = async () => {
+    if (selectedPost) {
+      const selectedPostData = posts.find((post) => post.post_id === selectedPost);
+
+      if (selectedPostData) {
+        const userId = selectedPostData.user_id; // Get the user_id from the found post
+
+        await handleRequest(
+          selectedPost,
+          userId,
+          requestContent,
+          durationDays ?? 0, // Pass the duration days, using 0 as default if undefined
+          durationMinutes ?? 0 // Pass the duration minutes, using 0 as default if undefined
+        );
+
+        setModalOpen(false); // Close the modal after submitting
+        // Reset fields
+        setRequestContent('');
+        setDurationDays(undefined);
+        setDurationMinutes(undefined);
+        
+      } else {
+        console.error('Selected post not found');
+      }
+    }
+  };
 
   return (
     <div className="ml-48 mt-16 p-8 flex justify-center">
@@ -97,12 +133,22 @@ const ClientPost = () => {
            posts
            .filter(post => post.user.role.rolename === 'User') // Ensure you're displaying only client posts
            .map(post => (
-            <PostCard key={post.post_id} post={post} />
+            <PostCard key={post.post_id} post={post} onRequestSubmit={handleRequestButtonClick} />
           ))
         ) : (
           <Typography>No client posts available</Typography>
         )}
       </div>
+
+      {/* Request Modal */}
+      <RequestModal
+        open={modalOpen}
+        handleClose={() => setModalOpen(false)}
+        handleSubmit={handleRequestSubmit}
+        setRequestContent={setRequestContent}
+        setDurationDays={setDurationDays}
+        setDurationMinutes={setDurationMinutes}
+      />
     </div>
   );
 };

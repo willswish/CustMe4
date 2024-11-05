@@ -12,6 +12,7 @@ import { ChatProvider } from './context/ChatContext';
 import { ClientProfileProvider } from './context/ClientProfileContext'; 
 import { SearchProvider } from './context/SearchContext';
 import { DesignerProvider } from './context/Desing&ProviderContext';
+import { ArtistAndProviderProvider } from './context/Artist&ProviderContext';
 
 const App = () => {
     return (
@@ -27,7 +28,11 @@ const App = () => {
                                             <ClientProfileProvider>
                                                 <SearchProvider>
                                                     <DesignerProvider>
-                                                        <Routes />
+                                                    <ArtistAndProviderProvider>
+                                                       
+                                                       <Routes />
+                                                   </ArtistAndProviderProvider>
+                                                        
                                                     </DesignerProvider>
                                                 </SearchProvider>
                                             </ClientProfileProvider>

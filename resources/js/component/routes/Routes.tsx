@@ -27,6 +27,7 @@ import PrintingInformationPage from '../views/printingInfo';
 import MapView from '../views/mapview';
 import DesignerPostForm from '../views/forms/Admin/designerForm';
 import ProviderPostForm from '../views/forms/Admin/provideForm';
+import Allpost from '../views/forms/Admin/MyPost1Form';
 
 
 const AppRoutes = () => {
@@ -69,7 +70,7 @@ const AppRoutes = () => {
 
       {/* Routes accessible by multiple roles */}
       <Route element={<ProtectedRoutes roles={['Admin', 'User', 'Graphic Designer', 'Printing Shop']} />}>
-        <Route path="/allposts" element={<DisplayForm />} />
+        <Route path="/providerdesigner" element={<DisplayForm />} />
         <Route path="/posts/:postId" element={<EditPostForm />} />
         <Route path="/chat/:userId" element={<ChatForm />} />
         <Route path="/chats" element={<ChatForm />} />
@@ -83,6 +84,7 @@ const AppRoutes = () => {
         <Route path="/clients/:id/profile" element={<ClientProfile/>} />
         <Route path="/designerpost" element={<DesignerPostForm />} />
         <Route path="/providerpost" element={<ProviderPostForm />} />
+        <Route path="/allposts" element={<Allpost />} />
 
 
       

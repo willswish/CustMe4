@@ -180,7 +180,7 @@ const Header: React.FC<HeaderProps> = ({ onLocationSelect }) => {
             </NavLink>
 
             {/* Designer */}
-            <NavLink to="/allposts" className="text-white">
+            <NavLink to="/providerdesigner" className="text-white">
               <ListItem>
                 <ListItemIcon sx={{ color: 'white' }}>
                   <BrushIcon />
@@ -190,12 +190,12 @@ const Header: React.FC<HeaderProps> = ({ onLocationSelect }) => {
             </NavLink>
 
             {/* Print Shop */}
-            <NavLink to="/print-shop" className="text-white">
+            <NavLink to="/allposts" className="text-white">
               <ListItem>
                 <ListItemIcon sx={{ color: 'white' }}>
                   <PrintIcon />
                 </ListItemIcon>
-                {isSidebarExpanded && <ListItemText primary="Print Shop" />}
+                {isSidebarExpanded && <ListItemText primary="Allposts" />}
               </ListItem>
             </NavLink>
 
