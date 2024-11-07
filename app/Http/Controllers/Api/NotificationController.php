@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Notification;
 use App\Models\Request as ModelsRequest;
+use App\Events\NotificationEvent;
 
 class NotificationController extends Controller
 {
@@ -14,13 +15,17 @@ class NotificationController extends Controller
      */
     public function index(Request $request)
     {
-        // Fetch notifications with their associated requests and posts
-        $notifications = Notification::with(['request.post']) // Eager load the associated requests and posts
+        // Fetch notifications with associated requests, posts, users, and roles
+        $notifications = Notification::with([
+            'request.post',
+            'request.user.role',       // Load role of the user who created the request
+            'request.targetUser.role',  // Load role of the target user
+        ])
             ->where('user_id', $request->user()->id) // Filter by the authenticated user
             ->orderBy('created_at', 'desc') // Order by creation date
             ->get();
 
-        // Transform the notifications to replace the status
+        // Transform the notifications to replace the status and include user roles
         $notifications = $notifications->map(function ($notification) {
             return [
                 'id' => $notification->id,
@@ -37,11 +42,12 @@ class NotificationController extends Controller
                 'duration_days' => $notification->request->duration_days,
                 'duration_minutes' => $notification->request->duration_minutes,
 
-                // Include price from the associated post if it exists
-                // You can include more fields from the request or post if needed
+                // Include the roles of the user and target user
+                'user_role' => $notification->request->user->role->roleid ?? 'N/A', // Role of the request initiator
+                'target_user_role' => $notification->request->targetUser->role->roleid ?? 'N/A', // Role of the target user
             ];
         });
-
+        broadcast(new NotificationEvent($notifications));
         // Return the transformed data as a JSON response
         return response()->json(['notifications' => $notifications]);
     }

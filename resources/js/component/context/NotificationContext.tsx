@@ -15,12 +15,15 @@ interface Notification {
   duration_days: number;
   duration_minutes: number;
   request_content: string;
+  user_role: number; 
+  target_user_role: number; 
 }
 
 interface NotificationContextProps {
   notifications: Notification[];
-  acceptNotification: (id: number) => Promise<void>;
-  declineNotification: (id: number) => Promise<void>;
+  setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
+  acceptNotification: (notificationId: number, requestId: number) => Promise<void>;
+  declineNotification: (notificationId: number, requestId: number) => Promise<void>;
   selectedNotification: Notification | null;
   setSelectedNotification: (id: number | null) => void;
 }
@@ -84,9 +87,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     };
   }, [user]);
 
-  const acceptNotification = async (requestId: number) => {
+  const acceptNotification = async (notificationId: number, requestId: number) => {
     try {
-      const response = await apiService.post(`/notifications/${requestId}/accept`, null, {
+      const response = await apiService.post(`/requests/${requestId}/accept/${notificationId}`, null, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('authToken')}`,
         },
@@ -97,7 +100,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       // Update the notifications state with the accepted status and timing data
       setNotifications((prevNotifications) =>
         prevNotifications.map((notification) =>
-          notification.request_id === requestId ? { ...notification, ...updatedNotification } : notification
+          notification.id === notificationId ? { ...notification, ...updatedNotification } : notification
         )
       );
     } catch (error) {
@@ -105,19 +108,18 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
   };
   
-
-  const declineNotification = async (requestId: number) => {
+  const declineNotification = async (notificationId: number, requestId: number) => {
     try {
-      await apiService.post(`/notifications/${requestId}/decline`, null, {
+      await apiService.post(`/requests/${requestId}/decline/${notificationId}`, null, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('authToken')}`,
         },
       });
 
-      console.log(`Notification ${requestId} declined.`);
+      console.log(`Notification ${notificationId} declined.`);
       setNotifications((prevNotifications) =>
         prevNotifications.map((notification) =>
-          notification.request_id === requestId ? { ...notification, status: 'declined' } : notification
+          notification.id === notificationId ? { ...notification, status: 'declined' } : notification
         )
       );
     } catch (error) {
@@ -134,6 +136,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   return (
     <NotificationContext.Provider
       value={{
+        setNotifications,
         notifications,
         acceptNotification,
         declineNotification,

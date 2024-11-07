@@ -94,4 +94,16 @@ class User extends Authenticatable
     {
         return $this->hasMany(Portfolio::class, 'user_id');
     }
+    public function payments()
+    {
+        return $this->hasMany(Payment::class, 'user_id', 'id');
+    }
+    public function initialPayments()
+    {
+        return $this->hasMany(InitialPayment::class, 'user_id');
+    }
+    public function receivedPayments()
+    {
+        return $this->hasMany(Payment::class, 'receiver_id');
+    }
 }

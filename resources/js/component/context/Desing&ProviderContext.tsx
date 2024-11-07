@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import apiService from '../services/apiService';
-import { useAuth, User } from '../../../js/component/context/AuthContext';
+import { useAuth, User } from '../context/AuthContext';
 
 interface Image {
   image_id: number;
@@ -25,6 +25,7 @@ interface Post {
 }
 
 interface DesignerProviderContextType {
+  
   fetchDesignerPosts: (page: number, limit: number) => Promise<Post[]>;
   fetchProviderPosts: (page: number, limit: number) => Promise<Post[]>;
   user: User | null;

@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Broadcast;
 Route::middleware(['auth:sanctum'])->group(function () {
     Broadcast::routes();
     Route::get('/current-user', [UserApiController::class, 'currentUser']);
-    Route::get('/users', [UserApiController::class, 'getUsers']);
+    Route::get('/users', [UserApiController::class, 'getUsfers']);
     Route::post('/logout', [UserApiController::class, 'logout']);
     Route::post('/updateUsers/{userId}', [UserApiController::class, 'acceptUser']);
     Route::post('/posts', [PostController::class, 'store']);
@@ -54,8 +54,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/allposts', [PostController::class, 'displayPost']);
 
 
-    Route::post('/notifications/{requestId}/accept', [RequestController::class, 'accept']);
-    Route::post('/notifications/{requestId}/decline', [RequestController::class, 'decline']);
+    Route::post('/requests/{requestId}/accept/{notificationId}', [RequestController::class, 'accept']);
+    Route::post('/requests/{requestId}/decline/{notificationId}', [RequestController::class, 'decline']);
 
     Route::get('/userq/{userId}', [UserApiController::class, 'getUserData']);
 
@@ -64,10 +64,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/broadcasting/auth', '\Illuminate\Broadcasting\BroadcastController@authenticate');
 
     Route::post('/initiate-payment', [PaymentController::class, 'initiatePayment'])->name('payment.initiate');
+    Route::post('/pay-for-product', [PaymentController::class, 'payForProduct']);
     Route::get('/payment-success', [PaymentController::class, 'paymentSuccess'])->name('payment.success');
     Route::get('/payment-failed', [PaymentController::class, 'paymentFailed'])->name('payment.failed');
 
     Route::get('/showrequests', [RequestController::class, 'getAllRequests']);
+
+    Broadcast::channel('chat.{receiverId}', function ($user, $receiverId) {
+        return (int) $user->id === (int) $receiverId || (int) $user->id === (int) $receiverId;
+    });
 });
 
 

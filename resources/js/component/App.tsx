@@ -13,6 +13,8 @@ import { ClientProfileProvider } from './context/ClientProfileContext';
 import { SearchProvider } from './context/SearchContext';
 import { DesignerProvider } from './context/Desing&ProviderContext';
 import { ArtistAndProviderProvider } from './context/Artist&ProviderContext';
+import { PaymentProvider } from './context/PaymentContext';
+
 
 const App = () => {
     return (
@@ -29,10 +31,10 @@ const App = () => {
                                                 <SearchProvider>
                                                     <DesignerProvider>
                                                     <ArtistAndProviderProvider>
-                                                       
-                                                       <Routes />
+                                                    <PaymentProvider>
+                                                        <Routes />
+                                                    </PaymentProvider>
                                                    </ArtistAndProviderProvider>
-                                                        
                                                     </DesignerProvider>
                                                 </SearchProvider>
                                             </ClientProfileProvider>

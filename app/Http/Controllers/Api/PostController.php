@@ -26,6 +26,7 @@ class PostController extends Controller
             'content' => 'required|string',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'price' => 'required|numeric|min:0',
+            'quantity' => 'nullable|integer|min:0',
         ]);
 
         try {
@@ -33,6 +34,7 @@ class PostController extends Controller
                 'title' => $request->title,
                 'content' => $request->content,
                 'price' => $request->price,
+                'quantity' => $request->quantity,
                 'user_id' => Auth::id(),
             ]);
 
@@ -98,6 +100,8 @@ class PostController extends Controller
             'content' => 'required|string',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'existingImages' => 'array',
+            'price' => 'nullable|numeric|min:0',
+            'quantity' => 'nullable|integer|min:0',
         ]);
 
         try {
@@ -109,6 +113,9 @@ class PostController extends Controller
 
             $post->title = $request->title;
             $post->content = $request->content;
+            $post->price = $request->price;
+            $post->quantity = $request->quantity;
+
             $post->save();
 
             $existingImages = $request->input('existingImages', []);

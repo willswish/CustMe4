@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { FaEdit, FaTrash, FaPaperPlane, FaComments } from 'react-icons/fa';
 import Header from '../components/header';
 import { Card, CardContent, CardActions, Typography, Button } from '@mui/material';
 import { useRequest } from '../../../context/RequestContext';
-import DesignerDropdown from '../components/dropdown/designer_dropdown';
 import RequestModal from '../../requestmore'; // Adjust the path as necessary
 import { useDesignerProviderContext } from '../../../context/Desing&ProviderContext';
+import { usePostContext } from '../../../context/PostContext'; // Import PostContext
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true,
+  }).format(date);
+};
 
 interface Image {
   image_id: number;
@@ -14,19 +26,15 @@ interface Image {
 }
 
 const DesignerPostForm: React.FC = () => {
-  const {
-    fetchDesignerPosts,
-  } = useDesignerProviderContext();
+  const { fetchDesignerPosts } = useDesignerProviderContext();
   const { handleRequest } = useRequest();
+  const { user, deletePost } = usePostContext(); // Access user from context
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<number | null>(null);
   const [requestContent, setRequestContent] = useState('');
-  const [durationDays, setDurationDays] = useState<number | undefined>(undefined);
-  const [durationMinutes, setDurationMinutes] = useState<number | undefined>(undefined);
-  const [price, setPrice] = useState<number | undefined>(undefined);
   const [designerPosts, setDesignerPosts] = useState<any[]>([]);
+  const [targetUserId, setTargetUserId] = useState<number | null>(null);
   const navigate = useNavigate();
-  const { userId } = useParams();
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -46,11 +54,13 @@ const DesignerPostForm: React.FC = () => {
   };
 
   const handleDelete = (postId: number) => {
-    // Handle delete logic if needed
+    if (window.confirm("Are you sure you want to delete this post?")) {
+      deletePost(postId);
+    }
   };
 
   const handleSendMessage = (userId: number) => {
-    navigate(`/chat/${userId}`); // Redirect to chat page with the user's ID
+    navigate("/chats", { state: { userId } });
   };
 
   const handleRequestButtonClick = (postId: number) => {
@@ -61,23 +71,12 @@ const DesignerPostForm: React.FC = () => {
   const handleRequestSubmit = async () => {
     if (selectedPost) {
       const selectedPostData = designerPosts.find((post) => post.post_id === selectedPost);
-
       if (selectedPostData) {
-        const userId = selectedPostData.user_id; // Get the user_id from the found post
-
-        await handleRequest(
-          selectedPost,
-          userId,
-          requestContent, // Pass the price value, using 0 as default if undefined
-          durationDays ?? 0, // Pass the duration days, using 0 as default if undefined
-          durationMinutes ?? 0 // Pass the duration minutes, using 0 as default if undefined
-        );
-
+        const userId = selectedPostData.user_id;
+        setTargetUserId(userId);
+        await handleRequest(selectedPost, userId, requestContent);
         setModalOpen(false); // Close the modal after submitting
-        // Reset fields
-        setRequestContent('');
-        setDurationDays(undefined);
-        setDurationMinutes(undefined);
+        setRequestContent(''); // Reset fields
       } else {
         console.error('Selected post not found');
       }
@@ -117,17 +116,31 @@ const DesignerPostForm: React.FC = () => {
                   </div>
                 </div>
                 <Typography variant="h6" component="h2" className="font-bold">
-                 Title: {post.title}
+                  Title: {post.title}
                 </Typography>
                 <Typography variant="body2" color="textSecondary" className="mb-2">
-                 Content: {post.content}
+                  Content: {post.content}
                 </Typography>
+                <div className="mb-3">
+                  <Typography variant="body2" color="textPrimary" className="mb-1">
+                    <strong>Price:</strong> {post.price ? `z${post.price}` : 'N/A'}
+                  </Typography>
+                  <Typography variant="body2" color="textPrimary" className="mb-1">
+                    <strong>Quantity:</strong> {post.quantity ? `₱${post.quantity}` : 'N/A'}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary" className="mb-1">
+                    <strong>Created:</strong> {post.created_at ? formatDate(post.created_at) : 'N/A'}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    <strong>Updated:</strong> {post.updated_at ? formatDate(post.updated_at) : 'N/A'}
+                  </Typography>
+                </div>
               </CardContent>
               <CardActions className="flex flex-row justify-between items-center">
                 <div className="flex flex-row space-x-2">
-                  {post.user_id !== userId && (
+                  {post.user_id !== user.id && (
                     <Button
-                      onClick={() => handleRequestButtonClick(post.post_id)} // Open modal
+                      onClick={() => handleRequestButtonClick(post.post_id)}
                       variant="outlined"
                       startIcon={<FaPaperPlane />}
                       size="small"
@@ -136,7 +149,7 @@ const DesignerPostForm: React.FC = () => {
                       Apply
                     </Button>
                   )}
-                  {post.user_id === userId && (
+                  {post.user_id === user.id && (
                     <>
                       <Button
                         onClick={() => handleEdit(post.post_id, post.title, post.content, post.images)}
@@ -194,11 +207,9 @@ const DesignerPostForm: React.FC = () => {
         <RequestModal
           open={modalOpen}
           handleClose={() => setModalOpen(false)}
-          handleSubmit={handleRequestSubmit}
           setRequestContent={setRequestContent}
-          setDurationDays={setDurationDays}
-          setDurationMinutes={setDurationMinutes}
-         
+          selectedPost={selectedPost}
+          targetUserId={targetUserId}
         />
       </div>
     </div>

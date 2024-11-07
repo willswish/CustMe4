@@ -2,9 +2,10 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 import apiService from '../services/apiService';
 
 interface PaymentContextProps {
-  initiatePayment: (requestId: number, amount: number) => Promise<string | null>;
+  initiatePayment: (requestId: number, amount: number, payerId: number) => Promise<string | null>;
   loading: boolean;
 }
+
 
 const PaymentContext = createContext<PaymentContextProps | undefined>(undefined);
 

@@ -104,7 +104,7 @@ class UserApiController extends Controller
             'lastname' => 'required|string|max:255',
             'profilepicture' => 'nullable|string',
             'coverphoto' => 'nullable|string',
-            'zipcode' => 'required|string|max:10',
+            'zipcode' => 'required|string|max:11',
             'bio' => 'nullable|string', // For AboutMe
             'skills' => 'nullable|array', // Array of skill IDs
             'printing_skills' => 'nullable|array', // Array of printing skill IDs
@@ -287,9 +287,13 @@ class UserApiController extends Controller
     public function getUsers(Request $request)
     {
         $currentUser = Auth::user();
-        $users = User::where('id', '!=', $currentUser->id)->with('role')->paginate(5);
+        $users = User::where('id', '!=', $currentUser->id)
+            ->with(['role', 'certificates', 'portfolios']) // Eager load role, certificates, and portfolios
+            ->paginate(5);
+
         return response()->json(['users' => $users]);
     }
+
 
     public function acceptUser(Request $request, $userId)
     {

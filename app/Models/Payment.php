@@ -9,20 +9,34 @@ class Payment extends Model
 {
     use HasFactory;
 
-    protected $table = 'payments'; // Specify the table if it differs from the model name
-    protected $primaryKey = 'payment_id'; // Specify the primary key if different
+    protected $table = 'payments'; // Specify the table name if it's different
+    protected $primaryKey = 'payment_id'; // Specify the primary key
 
     protected $fillable = [
-        'request_id',
+        'initial_payment_id', // Foreign key for linking to initial payments
+        'user_id',
+        'receiver_id',
         'amount',
         'status',
         'transaction_id',
         'payment_method',
     ];
 
-    // Define the relationship to the Request model
-    public function request()
+    // Define the relationship to the InitialPayment model
+    public function initialPayment()
     {
-        return $this->belongsTo(Request::class, 'request_id');
+        return $this->belongsTo(InitialPayment::class, 'initial_payment_id');
+    }
+
+    // Define the relationship to the User model (payer)
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    // Define the relationship to the User model (receiver)
+    public function receiver()
+    {
+        return $this->belongsTo(User::class, 'receiver_id');
     }
 }

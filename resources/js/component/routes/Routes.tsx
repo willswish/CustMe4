@@ -28,6 +28,8 @@ import MapView from '../views/mapview';
 import DesignerPostForm from '../views/forms/Admin/designerForm';
 import ProviderPostForm from '../views/forms/Admin/provideForm';
 import Allpost from '../views/forms/Admin/MyPost1Form';
+import PaymentSuccess from '../views/PaymentSuccess';
+import PaymentFailed from '../views/PaymentFailed';
 
 
 const AppRoutes = () => {
@@ -85,11 +87,8 @@ const AppRoutes = () => {
         <Route path="/designerpost" element={<DesignerPostForm />} />
         <Route path="/providerpost" element={<ProviderPostForm />} />
         <Route path="/allposts" element={<Allpost />} />
-
-
-      
-        
-
+        <Route path="/payment/success" element={<PaymentSuccess />} />
+        <Route path="/payment/failed" element={<PaymentFailed message="Payment not found." />} />
 
       </Route>
 

@@ -12,6 +12,8 @@ interface Post {
   title: string;
   content: string;
   user_id: number;
+  price: number; 
+  quantity; number;
   images: Image[];
   created_at: string;
   updated_at: string;
@@ -117,6 +119,7 @@ export const PostProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setTotalPosts(fetchedPosts.length); // Update total posts
       setTotalPages(Math.ceil(fetchedPosts.length / postsPerPage)); // Calculate total pages based on fetched posts
       setCurrentPage(page);
+      
     } catch (error) {
       console.log('Error fetching designer posts:', error);
     }

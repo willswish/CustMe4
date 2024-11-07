@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import Sidebar from '../components/sidebar';
 import Header from '../components/header';
 import { useAuth } from '../../../context/AuthContext';
 import { usePostContext } from '../../../context/PostContext';
 import apiService from '../../../services/apiService';
+import { useClientProfile } from '../../../context/ClientProfileContext';
+
 
 const EditPostForm: React.FC = () => {
   const { user } = useAuth();
@@ -16,10 +17,16 @@ const EditPostForm: React.FC = () => {
 
   const [title, setTitle] = useState<string>(post?.title || '');
   const [content, setContent] = useState<string>(post?.content || '');
+  const [price, setPrice] = useState<number>(post?.price ? Number(post.price) : 0);
+  const [quantity, setQuantity] = useState<number>(post?.quantity ? Number(post.quantity) : 0); // State for quantity
   const [images, setImages] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState(post?.images || []);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
+  const { profile } = useClientProfile();
+
+  // Check if the user has an allowed role
+  const isAllowedRole = user.role.rolename === 'Printing Shop' || user.role.rolename === 'Graphic Designer';
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
@@ -27,6 +34,14 @@ const EditPostForm: React.FC = () => {
 
   const handleContentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setContent(e.target.value);
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPrice(parseFloat(e.target.value));
+  };
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuantity(parseInt(e.target.value) || ''); // Handle quantity change
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,8 +65,8 @@ const EditPostForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title || !content) {
-      setError('Title and content are required');
+    if (!title || !content || (isAllowedRole && quantity === '')) {
+      setError('Title, content, and quantity (if applicable) are required');
       return;
     }
 
@@ -59,17 +74,19 @@ const EditPostForm: React.FC = () => {
     formData.append('_method', 'put'); // Method spoofing
     formData.append('title', title);
     formData.append('content', content);
+    formData.append('price', price.toString());
+
+    // Include quantity if user has the allowed role
+    if (isAllowedRole && quantity !== '') {
+      formData.append('quantity', quantity.toString());
+    }
+
     images.forEach(image => {
       formData.append('images[]', image);
     });
     existingImages.forEach(image => {
       formData.append('existingImages[]', image.image_id.toString());
     });
-
-    // Log FormData content
-    for (let pair of formData.entries()) {
-      console.log(pair[0] + ': ' + pair[1]);
-    }
 
     try {
       const response = await apiService.post(`/posts/${postId}`, formData, {
@@ -124,6 +141,29 @@ const EditPostForm: React.FC = () => {
               </div>
               <div>
                 <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring"
+                  placeholder="Price (e.g. 100.00)"
+                  value={price}
+                  onChange={handlePriceChange}
+                />
+              </div>
+              {isAllowedRole && (
+                <div>
+                  <input
+                    type="number"
+                    min="0"
+                    className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring"
+                    placeholder="Quantity"
+                    value={quantity}
+                    onChange={handleQuantityChange}
+                  />
+                </div>
+              )}
+              <div>
+                <input
                   type="file"
                   className="hidden"
                   id="imageUpload"
@@ -132,11 +172,11 @@ const EditPostForm: React.FC = () => {
                 />
                 <label htmlFor="imageUpload" className="cursor-pointer text-blue-500">Add images to your post</label>
                 <div className="mt-2">
-                  {existingImages.map((image, index) => (
+                  {existingImages.map((image) => (
                     <div key={image.image_id} className="relative inline-block mr-2 mb-2">
                       <img
                         src={`http://127.0.0.1:8000/storage/${image.image_path}`}
-                        alt={`Existing Preview ${index}`}
+                        alt={`Existing Preview`}
                         className="w-32 h-32 object-cover rounded"
                       />
                       <button

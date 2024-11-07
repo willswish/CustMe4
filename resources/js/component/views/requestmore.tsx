@@ -1,52 +1,59 @@
 import React, { Dispatch, SetStateAction, useState, useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from '@mui/material';
+import apiServices from "../services/apiService";
 
 interface RequestModalProps {
   open: boolean;
   handleClose: () => void;
-  handleSubmit: () => Promise<void>;
   setRequestContent: Dispatch<SetStateAction<string>>;
-  setDurationDays: Dispatch<SetStateAction<number | undefined>>;
-  setDurationMinutes: Dispatch<SetStateAction<number | undefined>>;
-// Add the setPrice prop
+  selectedPost: number | null;
+  targetUserId: number;
 }
 
 const RequestModal: React.FC<RequestModalProps> = ({
   open,
   handleClose,
-  handleSubmit,
   setRequestContent,
-  setDurationDays,
-  setDurationMinutes,
- // Add setPrice to props
+  selectedPost,
+  targetUserId,
 }) => {
   const [requestContent, setLocalRequestContent] = useState('');
-  const [durationDays, setLocalDurationDays] = useState('');
-  const [durationMinutes, setLocalDurationMinutes] = useState('');
-  
 
   useEffect(() => {
-    // Reset local state when modal closes
     if (!open) {
       setLocalRequestContent('');
-      setLocalDurationDays('');
-      setLocalDurationMinutes('');
     }
-  }, [open]);
-
-  const isSubmitDisabled = !requestContent || !durationDays || !durationMinutes;
+    console.log('RequestModal opened. Target User ID:', targetUserId);
+  }, [open, targetUserId]);
 
   const handleSubmitWrapper = async () => {
-    setRequestContent(requestContent);
+    try {
+      if (!selectedPost) {
+        console.error("No post selected for payment.");
+        return;
+      }
 
-    // Parse duration values
-    setDurationDays(durationDays ? parseInt(durationDays) : undefined);
-    setDurationMinutes(durationMinutes ? parseInt(durationMinutes) : undefined);
-    
-    
+      // Prepare data for request
+      setRequestContent(requestContent);
 
-    await handleSubmit(); // Call the handleSubmit passed from the parent
-    handleClose(); // Close the modal after submitting
+      // Send the request to create InitialPayment and Request models and get checkout URL
+      const response = await apiServices.post('/pay-for-product', {
+        post_id: selectedPost,
+        target_user_id: targetUserId,  
+        request_content: requestContent,
+      });
+
+      const checkoutUrl = response.data.checkout_url;
+      if (checkoutUrl) {
+        window.open(checkoutUrl, '_blank'); // Open in a new tab
+      } else {
+        console.error("Checkout session failed: No checkout URL received");
+      }
+
+      handleClose();
+    } catch (error) {
+      console.error("Payment or request submission error:", error);
+    }
   };
 
   return (
@@ -63,41 +70,16 @@ const RequestModal: React.FC<RequestModalProps> = ({
           value={requestContent}
           onChange={(e) => {
             setLocalRequestContent(e.target.value);
-            setRequestContent(e.target.value); // Update context state
+            setRequestContent(e.target.value);
           }}
         />
-        <TextField
-          margin="dense"
-          label="Duration (Days)"
-          type="number"
-          fullWidth
-          variant="outlined"
-          value={durationDays}
-          onChange={(e) => {
-            setLocalDurationDays(e.target.value);
-            setDurationDays(e.target.value ? parseInt(e.target.value) : undefined); // Update context state
-          }}
-        />
-        <TextField
-          margin="dense"
-          label="Duration (Minutes)"
-          type="number"
-          fullWidth
-          variant="outlined"
-          value={durationMinutes}
-          onChange={(e) => {
-            setLocalDurationMinutes(e.target.value);
-            setDurationMinutes(e.target.value ? parseInt(e.target.value) : undefined); // Update context state
-          }}
-        />
-      
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} color="primary">
           Cancel
         </Button>
-        <Button onClick={handleSubmitWrapper} color="primary" disabled={isSubmitDisabled}>
-          Submit
+        <Button onClick={handleSubmitWrapper} color="primary">
+          Submit and Pay 20%
         </Button>
       </DialogActions>
     </Dialog>

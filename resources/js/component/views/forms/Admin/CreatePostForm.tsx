@@ -10,6 +10,7 @@ const CreatePostForm: React.FC = () => {
   const [title, setTitle] = useState<string>('');
   const [content, setContent] = useState<string>('');
   const [price, setPrice] = useState<number | ''>('');
+  const [quantity, setQuantity] = useState<number | ''>(''); // State for quantity
   const [images, setImages] = useState<File[]>([]);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
@@ -24,6 +25,10 @@ const CreatePostForm: React.FC = () => {
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPrice(parseFloat(e.target.value));
+  };
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuantity(parseInt(e.target.value) || ''); // Handle quantity change
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,11 +46,16 @@ const CreatePostForm: React.FC = () => {
     setImages(prevImages => prevImages.filter((_, i) => i !== index));
   };
 
+  const isAllowedRole = () => {
+    return user && (user.role.rolename === 'Printing Shop' || user.role.rolename === 'Graphic Designer');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title || !content || price === '') {
-      setError('Title, content, and price are required');
+    // Validation for required fields
+    if (!title || !content || price === '' || (isAllowedRole() && quantity === '')) {
+      setError('Title, content, price, and quantity (if applicable) are required');
       return;
     }
 
@@ -53,6 +63,12 @@ const CreatePostForm: React.FC = () => {
     formData.append('title', title);
     formData.append('content', content);
     formData.append('price', price.toString());
+
+    // Append quantity only if user has the allowed role
+    if (isAllowedRole()) {
+      formData.append('quantity', quantity.toString());
+    }
+
     images.forEach(image => {
       formData.append('images[]', image);
     });
@@ -69,6 +85,7 @@ const CreatePostForm: React.FC = () => {
         setTitle('');
         setContent('');
         setPrice('');
+        setQuantity(''); // Reset quantity
         setImages([]);
         setError('');
         addPost(response.data);
@@ -119,6 +136,18 @@ const CreatePostForm: React.FC = () => {
                   onChange={handlePriceChange}
                 />
               </div>
+              {isAllowedRole() && (
+                <div>
+                  <input
+                    type="number"
+                    min="0"
+                    className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring"
+                    placeholder="Quantity (required for Graphic Designer / Printing Shop)"
+                    value={quantity}
+                    onChange={handleQuantityChange}
+                  />
+                </div>
+              )}
               <div>
                 <input
                   type="file"

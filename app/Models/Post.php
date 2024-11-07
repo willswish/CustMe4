@@ -10,7 +10,7 @@ class Post extends Model
     use HasFactory;
 
     protected $primaryKey = 'post_id';
-    protected $fillable = ['title', 'content', 'price', 'user_id'];
+    protected $fillable = ['title', 'content', 'price', 'quantity', 'user_id'];
 
     public function createPost(array $task)
     {

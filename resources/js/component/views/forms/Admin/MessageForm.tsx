@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Avatar,
   Badge,
@@ -13,54 +13,31 @@ import {
   Card,
 } from "@mui/material";
 import { Phone, VideoCall, MoreHoriz, Send, Search as SearchIcon } from "@mui/icons-material";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useChat } from "../../../context/ChatContext";
 import { useUserProfile } from "../../../context/UserProfileContext";
 import { useAuth } from "../../../context/AuthContext";
 import Header from "../components/header";
-import Pusher from "pusher-js";
 
 const ChatForm: React.FC = () => {
   const navigate = useNavigate();
-  const { userId } = useParams<{ userId: string }>();
-  const { user } = useAuth(); // Get logged-in user from AuthContext
-  const { chats, sendMessage, userChatList } = useChat();
-  const { userProfile, fetchUserProfile } = useUserProfile();
+  const location = useLocation();
+  const { user } = useAuth();
+  const { messages, sendMessage, userChatList, fetchMessages, fetchUserChatList } = useChat();
+  const { userProfile } = useUserProfile();
   const [currentMessage, setCurrentMessage] = useState<string>("");
   const [selectedChatUser, setSelectedChatUser] = useState<any>(null);
-  const channelRef = useRef<any>(null); // Ref to store the Pusher channel
 
-  // Initialize Pusher
+  // Get the userId from location state
+  const userId = location.state?.userId;
+
+  // Fetch chat messages and user list on mount
   useEffect(() => {
-    const pusher = new Pusher("087ae63043c8feb92728", {
-      cluster: "ap1",
-      authEndpoint: "/broadcasting/auth",
-      auth: {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-        },
-      },
-    });
+    fetchMessages();
+    fetchUserChatList();
+  }, [fetchMessages, fetchUserChatList]);
 
-    // Subscribe to the channel and bind to the event if user is available
-    if (user) { // Use user from useAuth
-      channelRef.current = pusher.subscribe(`private-chat.${user.id}`);
-      channelRef.current.bind("message.sent", () => {
-        // Update chats state when a new message is sent
-        fetchUserProfile(); // Fetch the user profile to update the UI
-      });
-    }
-
-    return () => {
-      // Cleanup on component unmount
-      if (channelRef.current) {
-        channelRef.current.unbind_all();
-        pusher.unsubscribe(`private-chat.${user?.id}`);
-      }
-    };
-  }, [user, fetchUserProfile]);
-
-  // Set selected chat user based on userId from params or userChatList
+  // Set selected chat user based on userId from location state or userChatList
   useEffect(() => {
     if (userId) {
       const foundUser = userChatList.find((chat) => chat.id === Number(userId));
@@ -76,12 +53,8 @@ const ChatForm: React.FC = () => {
   const handleSendMessage = async () => {
     const receiverId = selectedChatUser ? selectedChatUser.id : Number(userId);
     if (currentMessage.trim() && receiverId) {
-      try {
-        await sendMessage(currentMessage, receiverId); // Send message
-        setCurrentMessage(""); // Clear the input message
-      } catch (error) {
-        console.error("Failed to send message:", error);
-      }
+      const success = await sendMessage(currentMessage, receiverId);
+      if (success) setCurrentMessage("");
     }
   };
 
@@ -92,9 +65,10 @@ const ChatForm: React.FC = () => {
     : null;
 
   // Filter messages for the selected user
-  const filteredMessages = chats.filter(chat =>
-    (chat.sender_id === selectedChatUser?.id && chat.receiver_id === user.id) ||
-    (chat.receiver_id === selectedChatUser?.id && chat.sender_id === user.id)
+  const filteredMessages = messages.filter(
+    (chat) =>
+      (chat.sender_id === selectedChatUser?.id && chat.receiver_id === user.id) ||
+      (chat.receiver_id === selectedChatUser?.id && chat.sender_id === user.id)
   );
 
   return (
@@ -127,7 +101,7 @@ const ChatForm: React.FC = () => {
                       className={`border-b hover:bg-gray-100 ${selectedChatUser?.id === chat.id ? 'bg-gray-200' : ''}`}
                       onClick={() => {
                         setSelectedChatUser(chat);
-                        navigate(`/chat/${chat.id}`);
+                        navigate("/chats", { state: { userId: chat.id } });
                       }}
                     >
                       <ListItemAvatar>
@@ -175,7 +149,7 @@ const ChatForm: React.FC = () => {
                       )}
                       <div className="leading-tight">
                         <div className="text-md">
-                          {selectedChatUser.username || "Unknown"} 
+                          {selectedChatUser.username || "Unknown"}
                         </div>
                         <span className={selectedChatUser.online ? "text-green-500" : "text-red-500"}>
                           {selectedChatUser.online ? "Online" : "Offline"}

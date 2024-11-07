@@ -30,5 +30,9 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'paymongo' => [
+        'secret_key' => env('PAYMONGO_SECRET_KEY'), // Retrieves PAYMONGO_SECRET_KEY from .env
+        'public_key' => env('PAYMONGO_PUBLIC_KEY'), // Retrieves PAYMONGO_PUBLIC_KEY from .env
+    ],
 
 ];

@@ -73,6 +73,9 @@ const ClientProfile = () => {
             <Typography variant="h5" className="font-bold">
               {`${profile.personal_information?.firstname || ''} ${profile.personal_information?.lastname || ''}`}
             </Typography>
+            <Typography variant="body1" className="mt-1">
+              Phone Number: {profile.personal_information?.zipcode || 'N/A'}
+            </Typography>
             {canEditProfile && (
               <Button
                 variant="outlined"

@@ -13,7 +13,6 @@ import RequestModal from '../../requestmore'; // Adjust the path as necessary
 import { useDesignerProviderContext } from '../../../context/Desing&ProviderContext';
 import { format } from 'date-fns';
 
-
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('en-US', {
@@ -48,10 +47,9 @@ const DisplayForm: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<number | null>(null);
   const [requestContent, setRequestContent] = useState('');
-  const [durationDays, setDurationDays] = useState<number | undefined>(undefined);
-  const [durationMinutes, setDurationMinutes] = useState<number | undefined>(undefined);
   const [designerPosts, setDesignerPosts] = useState<any[]>([]);
   const [providerPosts, setProviderPosts] = useState<any[]>([]);
+  const [targetUserId, setTargetUserId] = useState<number | null>(null);
   const navigate = useNavigate();
   const { userId } = useParams();
 
@@ -76,10 +74,9 @@ const DisplayForm: React.FC = () => {
     fetchPosts();
   }, [page, fetchDesignerPosts, fetchProviderPosts]);
   
-
-  const handleEdit = (postId: number, title: string, content: string, images: Image[]) => {
-    navigate(`/posts/${postId}`, { state: { postId, title, content, images } });
-  };
+  const handleEdit = (postId: number, title: string, content: string, images: Image[], price: number | null, quantity: number | null) => {
+    navigate(`/posts/${postId}`, { state: { postId, title, content, images, price, quantity } });
+};
 
   const handleDelete = (postId: number) => {
     if (user) {
@@ -88,11 +85,13 @@ const DisplayForm: React.FC = () => {
   };
 
   const handleSendMessage = (userId: number) => {
-    navigate(`/chat/${userId}`); // Redirect to chat page with the user's ID
-  };
+    navigate("/chats", { state: { userId } }); // Pass userId as state
+  }
 
-  const handleRequestButtonClick = (postId: number) => {
+  const handleRequestButtonClick = (postId: number, postUserId: number) => {
+    
     setSelectedPost(postId);
+    setTargetUserId(postUserId);
     setModalOpen(true);
   };
 
@@ -102,21 +101,16 @@ const DisplayForm: React.FC = () => {
 
       if (selectedPostData) {
         const userId = selectedPostData.user_id; // Get the user_id from the found post
-
+        setTargetUserId(userId);
         await handleRequest(
           selectedPost,
           userId,
-          requestContent,
-          // Pass the price value, using 0 as default if undefined
-          durationDays ?? 0, // Pass the duration days, using 0 as default if undefined
-          durationMinutes ?? 0 // Pass the duration minutes, using 0 as default if undefined
+          requestContent
         );
 
         setModalOpen(false); // Close the modal after submitting
         // Reset fields
         setRequestContent('');
-        setDurationDays(undefined);
-        setDurationMinutes(undefined);
         
       } else {
         console.error('Selected post not found');
@@ -140,52 +134,55 @@ const DisplayForm: React.FC = () => {
                   <p className="text-gray-600">No Image Available</p>
                 </div>
               )}
-            <CardContent>
-  {/* User Information */}
-  <div className="flex items-center mb-4">
-    <img
-      src={'https://via.placeholder.com/40'}
-      alt="Profile"
-      className="w-8 h-8 rounded-full mr-3"
-    />
-    <div>
-      <Typography variant="subtitle1" className="font-bold">
-        {post.user?.username || 'Unknown'}
-      </Typography>
-      <Typography variant="body2" color="textSecondary">
-        {post.user?.role?.rolename || 'N/A'}
-      </Typography>
-    </div>
-  </div>
+              <CardContent>
+                {/* User Information */}
+                <div className="flex items-center mb-4">
+                  <img
+                    src={'https://via.placeholder.com/40'}
+                    alt="Profile"
+                    className="w-8 h-8 rounded-full mr-3"
+                  />
+                  <div>
+                    <Typography variant="subtitle1" className="font-bold">
+                      {post.user?.username || 'Unknown'}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      {post.user?.role?.rolename || 'N/A'}
+                    </Typography>
+                  </div>
+                </div>
 
-  {/* Post Information */}
-  <Typography variant="h6" component="h2" className="font-bold mb-2">
-  <strong>Title:</strong> {post.title}
-  </Typography>
-  <Typography variant="body2" color="textSecondary" className="mb-3">
-  <strong>Content:</strong>{post.content}
-  </Typography>
+                {/* Post Information */}
+                <Typography variant="h6" component="h2" className="font-bold mb-2">
+                  <strong>Title:</strong> {post.title}
+                </Typography>
+                <Typography variant="body2" color="textSecondary" className="mb-3">
+                  <strong>Content:</strong>{post.content}
+                </Typography>
 
-  {/* Price, Created and Updated Information */}
-  <div className="mb-3">
-    <Typography variant="body2" color="textPrimary" className="mb-1">
-      <strong>Price:</strong> {post.price ? `₱${post.price}` : 'N/A'}
-    </Typography>
-    <Typography variant="body2" color="textSecondary" className="mb-1">
-      <strong>Created:</strong> {post.created_at ? formatDate(post.created_at) : 'N/A'}
-    </Typography>
-    <Typography variant="body2" color="textSecondary">
-      <strong>Updated:</strong> {post.updated_at ? formatDate(post.updated_at) : 'N/A'}
-    </Typography>
-  </div>
-</CardContent>
+                {/* Price, Created and Updated Information */}
+                <div className="mb-3">
+                  <Typography variant="body2" color="textPrimary" className="mb-1">
+                    <strong>Pricee:</strong> {post.price ? `₱${post.price}` : 'N/A'}
+                  </Typography>
+                  <Typography variant="body2" color="textPrimary" className="mb-1">
+                    <strong>Qauntity:</strong> {post.quantity? `${post.quantity}` : 'N/A'}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary" className="mb-1">
+                    <strong>Created:</strong> {post.created_at ? formatDate(post.created_at) : 'N/A'}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    <strong>Updated:</strong> {post.updated_at ? formatDate(post.updated_at) : 'N/A'}
+                  </Typography>
+                </div>
+              </CardContent>
 
               <CardActions className="flex flex-row justify-between items-center">
                 {user && (
                   <div className="flex flex-row space-x-2">
                     {post.user_id !== user.id && (
                       <Button
-                        onClick={() => handleRequestButtonClick(post.post_id)} // Open modal
+                        onClick={() => handleRequestButtonClick(post.post_id, post.user_id)} // Open modal
                         variant="outlined"
                         startIcon={<FaPaperPlane />}
                         size="small"
@@ -197,15 +194,15 @@ const DisplayForm: React.FC = () => {
                     {post.user_id === user.id && (
                       <>
                         <Button
-                          onClick={() => handleEdit(post.post_id, post.title, post.content, post.images)}
-                          variant="outlined"
-                          startIcon={<FaEdit />}
-                          size="small"
-                          color="success"
-                          className="mt-2"
-                        >
-                          Edit
-                        </Button>
+                        onClick={() => handleEdit(post.post_id, post.title, post.content, post.images, post.price, post.quantity)}
+                        variant="outlined"
+                        startIcon={<FaEdit />}
+                        size="small"
+                        color="success"
+                        className="mt-2"
+                    >
+                        Edit
+                    </Button>
                         <Button
                           onClick={() => handleDelete(post.post_id)}
                           variant="outlined"
@@ -237,7 +234,7 @@ const DisplayForm: React.FC = () => {
             No posts available.
           </Typography>
         )}
-  </div>
+      </div>
       <div className="flex justify-center mt-4">
         <Button
           variant="contained"
@@ -247,8 +244,7 @@ const DisplayForm: React.FC = () => {
           See More
         </Button>
       </div>
-      </div>
-   
+    </div>
   );
 
   return (
@@ -256,20 +252,18 @@ const DisplayForm: React.FC = () => {
       <div className="flex-1 flex flex-col">
         <Header />
         <div className="mt-16">
-        {renderPosts(designerPosts, 'Graphic Designer Posts', '/designerpost')}
+          {renderPosts(designerPosts, 'Graphic Designer Posts', '/designerpost')}
         </div>
         {renderPosts(providerPosts, 'Printing Provider Posts', '/providerpost')}
 
         {/* Request Modal */}
         <RequestModal
-          open={modalOpen}
-          handleClose={() => setModalOpen(false)}
-          handleSubmit={handleRequestSubmit}
-          setRequestContent={setRequestContent}
-          setDurationDays={setDurationDays}
-          setDurationMinutes={setDurationMinutes}
-         
-        />
+            open={modalOpen}
+            handleClose={() => setModalOpen(false)}
+            setRequestContent={setRequestContent}
+            selectedPost={selectedPost}
+            targetUserId={targetUserId} // Ensure this is properly defined
+          />
       </div>
     </div>
   );

@@ -78,7 +78,7 @@ class RequestController extends Controller
 
         // Log the notification creation event
         Log::info('Notification created:', $notification->toArray());
-        event(new NotificationEvent($notification));
+        broadcast(new NotificationEvent($notification));
 
         return response()->json(['message' => 'Request created and notification sent.'], 201);
     }
@@ -97,26 +97,14 @@ class RequestController extends Controller
     }
 
 
-    public function accept(Request $request, $requestId)
+    public function accept(Request $request, $requestId, $notificationId)
     {
+        Log::info('Accept request method called with requestId: ' . $requestId . ' and notificationId: ' . $notificationId);
         try {
             // Find the request by ID
             $userRequest = UserRequest::findOrFail($requestId);
             $userRequest->status = 'accepted';
             $userRequest->save();
-
-            // Calculate start time and deadline
-            $startTime = Carbon::now();
-            $deadline = $startTime->copy()->addDays($userRequest->duration_days)->addMinutes($userRequest->duration_minutes);
-
-            // Create timer entry
-            Timer::create([
-                'request_id' => $userRequest->request_id,
-                'start_time' => $startTime,
-                'deadline' => $deadline,
-                'duration_days' => $userRequest->duration_days,
-                'duration_minutes' => $userRequest->duration_minutes,
-            ]);
 
             // Create a notification for the sender
             $notification = Notification::create([
@@ -124,7 +112,6 @@ class RequestController extends Controller
                 'status' => 'accepted',
                 'user_id' => $userRequest->user_id,
                 'request_id' => $userRequest->request_id,
-                'created_at' => $startTime, // Set the created_at time to start time
             ]);
 
             Log::info('Accepted request and created notification: ' . json_encode($notification));
@@ -133,8 +120,6 @@ class RequestController extends Controller
             return response()->json([
                 'message' => 'Request accepted, sender notified in real time.',
                 'notification' => $notification,  // Return the notification data
-                'start_time' => $startTime,       // Include the start time
-                'deadline' => $deadline           // Include the deadline
             ], 200);
         } catch (\Exception $e) {
             Log::error('Error in accept method: ' . $e->getMessage());
@@ -142,27 +127,31 @@ class RequestController extends Controller
         }
     }
 
-
-
-    public function decline(Request $request, $requestId)
+    public function decline(Request $request, $requestId, $notificationId)
     {
-        // Find the request by ID
-        $userRequest = UserRequest::findOrFail($requestId);
-        $userRequest->status = 'declined'; // Update the status
-        $userRequest->save();
+        Log::info('Decline request method called with requestId: ' . $requestId . ' and notificationId: ' . $notificationId);
+        try {
+            // Find the request by ID
+            $userRequest = UserRequest::findOrFail($requestId);
+            $userRequest->status = 'declined'; // Update the status
+            $userRequest->save();
 
-        // Create a notification for the sender
-        $notification = Notification::create([
-            'content' => 'User @' . $request->user()->username . ' has declined your request.',
-            'status' => 'unread',
-            'user_id' => $userRequest->user_id, // Notify the original sender
-            'request_id' => $userRequest->request_id,
-        ]);
+            // Create a notification for the sender
+            $notification = Notification::create([
+                'content' => 'User @' . $request->user()->username . ' has declined your request.',
+                'status' => 'unread',
+                'user_id' => $userRequest->user_id, // Notify the original sender
+                'request_id' => $userRequest->request_id,
+            ]);
 
-        Log::info('Declined request: ' . json_encode($notification));
-        event(new NotificationEvent($notification)); // Fire event to notify real-time
+            Log::info('Declined request: ' . json_encode($notification));
+            event(new NotificationEvent($notification)); // Fire event to notify in real-time
 
-        return response()->json(['message' => 'Request declined and sender notified.'], 200);
+            return response()->json(['message' => 'Request declined and sender notified.'], 200);
+        } catch (\Exception $e) {
+            Log::error('Error in decline method: ' . $e->getMessage());
+            return response()->json(['error' => 'Could not process request'], 500);
+        }
     }
     public function getAllRequests(Request $request)
     {

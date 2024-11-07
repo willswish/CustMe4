@@ -15,8 +15,8 @@ const RegisterForm = () => {
   const [usernameError, setUsernameError] = useState("");
   const [firstname, setFirstname] = useState("");
   const [lastname, setLastname] = useState("");
-  const [zipcode, setZipcode] = useState("");
-  const [zipcodeError, setZipcodeError] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneNumberError, setPhoneNumberError] = useState("");
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState("");
@@ -35,29 +35,27 @@ const RegisterForm = () => {
     if (state?.roleId) {
       setSelectedRole(state.roleId.toString());
     } else {
-      setSelectedRole("2"); // Default to role ID 2
+      setSelectedRole("2");
     }
 
     if (state?.bio) setBio(state.bio);
 
-    // Ensure portfolioFiles is treated as an array
     if (Array.isArray(state?.portfolioFile)) {
       setPortfolioFiles(state.portfolioFile);
     } else if (state?.portfolioFile) {
-      setPortfolioFiles([state.portfolioFile]); // Wrap in array if it's a single file
+      setPortfolioFiles([state.portfolioFile]);
     }
 
-    // Same for certifications
     if (Array.isArray(state?.certificationFile)) {
       setCertificationsFiles(state.certificationFile);
     } else if (state?.certificationFile) {
-      setCertificationsFiles([state.certificationFile]); // Wrap in array if it's a single file
+      setCertificationsFiles([state.certificationFile]);
     }
 
     if (selectedRole === "3" && state?.skills) {
-      setSkills(state.skills); // Designer skills
+      setSkills(state.skills);
     } else if (selectedRole === "4" && state?.printingServices) {
-      setPrintingSkills(state.printingServices); // Printing provider services
+      setPrintingSkills(state.printingServices);
     }
   }, [location, selectedRole]);
 
@@ -78,8 +76,10 @@ const RegisterForm = () => {
     setUsernameError(username.trim() ? "" : "Username is required");
   };
 
-  const validateZipcode = () => {
-    setZipcodeError(zipcode.trim() ? "" : "Zipcode is required");
+  const validatePhoneNumber = () => {
+    const isNumeric = /^\d+$/.test(phoneNumber);
+    const isValidLength = phoneNumber.length === 11; // Must be exactly 11 characters
+    setPhoneNumberError(isNumeric && isValidLength ? "" : "Phone number must be 11 numeric digits");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,9 +89,9 @@ const RegisterForm = () => {
     validatePassword();
     validateConfirmPassword();
     validateUsername();
-    validateZipcode();
+    validatePhoneNumber();
   
-    if (!emailError && !passwordError && !confirmPasswordError && !usernameError && !zipcodeError) {
+    if (!emailError && !passwordError && !confirmPasswordError && !usernameError && !phoneNumberError) {
       const formData = new FormData();
       formData.append("role_id", selectedRole);
       formData.append("username", username);
@@ -99,7 +99,7 @@ const RegisterForm = () => {
       formData.append("password", password);
       formData.append("firstname", firstname);
       formData.append("lastname", lastname);
-      formData.append("zipcode", zipcode);
+      formData.append("zipcode", phoneNumber); // Map phoneNumber to zipcode for the database field
       formData.append("bio", bio);
   
       skills.forEach(skill => {
@@ -110,20 +110,13 @@ const RegisterForm = () => {
         formData.append("printing_skills[]", skill.toString());
       });
   
-      // Append portfolio files individually
       portfolioFiles.forEach((file, index) => {
         formData.append(`portfolio[${index}]`, file);
       });
   
-      // Append certification files individually
       certificationsFiles.forEach((file, index) => {
         formData.append(`certificate[${index}]`, file);
       });
-  
-      console.log("Submitting Form Data: ");
-      for (let pair of formData.entries()) {
-        console.log(`${pair[0]}: ${pair[1] instanceof File ? pair[1].name : pair[1]}`);
-      }
   
       try {
         const response = await apiServices.post("/register", formData, {
@@ -131,16 +124,14 @@ const RegisterForm = () => {
             "Content-Type": "multipart/form-data",
           },
         });
-        console.log("Registration successful:", response.data);
         setRegistrationSuccess(true);
-        // Reset form fields after successful registration
         setUsername("");
         setEmail("");
         setPassword("");
         setConfirmPassword("");
         setFirstname("");
         setLastname("");
-        setZipcode("");
+        setPhoneNumber("");
         setBio("");
         setSkills([]);
         setPrintingSkills([]);
@@ -207,7 +198,7 @@ const RegisterForm = () => {
             </Box>
 
             <Box mb={2}>
-              <TextField label="Zipcode" variant="outlined" fullWidth value={zipcode} onChange={(e) => setZipcode(e.target.value)} onBlur={validateZipcode} error={Boolean(zipcodeError)} helperText={zipcodeError} required />
+              <TextField label="Phone Number" type="number" variant="outlined" fullWidth value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} onBlur={validatePhoneNumber} error={Boolean(phoneNumberError)} helperText={phoneNumberError} required />
             </Box>
 
             <Button type="submit" variant="contained" fullWidth className="bg-primary text-white py-2" disabled={loading}>

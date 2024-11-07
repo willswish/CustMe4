@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('coverphoto')->nullable();
             $table->string('zipcode');
             $table->timestamps();
+            $table->unsignedInteger('quantity')->nullable();
 
             $table->unsignedBigInteger('user_id')->unique();
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');

@@ -1,35 +1,29 @@
-import React, { createContext, useState, useContext, useEffect, ReactNode, useRef } from 'react';
-import apiService from '../services/apiService';
-import Echo from 'laravel-echo';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import Pusher from 'pusher-js';
-import { useAuth } from './AuthContext';
+import apiService from '../services/apiService';
+
+export interface Message {
+  id: number;
+  content: string;
+  sender_id: number;
+  receiver_id: number;
+  created_at: string;
+}
 
 export interface ChatUser {
   id: number;
   username: string;
-  avatar: string;
+  profilepicture: string;
   online: boolean;
 }
 
-export interface Chat {
-  id: number;
-  content: string;
-  file_path?: string;
-  sender_id: number;
-  receiver_id: number;
-  user: ChatUser;
-  receiver?: ChatUser;
-}
-
 interface ChatContextProps {
-  chats: Chat[];
-  sendMessage: (content: string, recipientId: number, file?: File) => Promise<void>;
-  fetchChats: () => Promise<void>;
-  fetchUserChatList: () => Promise<void>;
-  firstChatId: number | null;
+  messages: Message[];
   userChatList: ChatUser[];
-  selectedUserId: number | null;
-  setSelectedUserId: (id: number | null) => void;
+  fetchMessages: () => Promise<void>;
+  fetchUserChatList: () => Promise<void>;
+  sendMessage: (content: string, receiverId: number) => Promise<boolean>;
+  loading: boolean;
 }
 
 const ChatContext = createContext<ChatContextProps | undefined>(undefined);
@@ -39,119 +33,94 @@ interface ChatProviderProps {
 }
 
 export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
-  const { user } = useAuth();
-  const [chats, setChats] = useState<Chat[]>([]);
-  const [firstChatId, setFirstChatId] = useState<number | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [userChatList, setUserChatList] = useState<ChatUser[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const newMessageRef = useRef<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const authToken = localStorage.getItem('authToken');
-
-  const fetchChats = async () => {
-    if (!user) return;
-    try {
-      const response = await apiService.get('/chats', {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-      setChats(response.data || []);
-      if (response.data.length > 0) {
-        setFirstChatId(response.data[0].id);
-      }
-    } catch (error) {
-      setError("Failed to fetch chats.");
-    }
-  };
-
-  const fetchUserChatList = async () => {
-    if (!user) return;
-    try {
-      const response = await apiService.get('/user-chat-list', {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-      setUserChatList(response.data || []);
-    } catch (error) {
-      setError("Failed to fetch user chat list.");
-    }
-  };
-
-  const sendMessage = async (content: string, recipientId: number, file?: File) => {
-    if (!user) return;
-
-    const formData = new FormData();
-    formData.append('content', content);
-    formData.append('receiver_id', recipientId.toString());
-    if (file) formData.append('file', file);
-
-    try {
-      const response = await apiService.post('/send-message', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-
-      setChats((prevChats) => [...prevChats, response.data]);
-      newMessageRef.current = true;
-      await fetchChats();
-    } catch (error) {
-      // Handle the error as necessary
-    }
-  };
-
+  // Initialize Pusher and subscribe to the public channel
   useEffect(() => {
-    fetchUserChatList();
-    fetchChats();
-    const API_BASE_URL = (window as any).env.API_BASE_URL;
     const pusher = new Pusher('087ae63043c8feb92728', {
       cluster: 'ap1',
-      forceTLS: true,
     });
 
-    const echo = new Echo({
-      broadcaster: 'pusher',
-      client: pusher,
-      authEndpoint: `${API_BASE_URL}/broadcasting/auth`,
-      auth: {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      },
+    const channel = pusher.subscribe('public-chat-channel'); // Use a public channel name
+    channel.bind('message.sent', (data: { chat: Message }) => {
+      setMessages((prevMessages) => [...prevMessages, data.chat]);
     });
-
-    if (user?.id) {
-      echo.private(`private-chat.${user.id}`)
-        .listen('.message-sent', (data: any) => {
-          console.log('Message received:', data);
-          setChats((prevChats) => [...prevChats, data]);
-        })
-        .error((error: any) => {
-          console.error('Error connecting to Pusher:', error);
-        });
-    }
 
     return () => {
-      echo.disconnect();
-      pusher.disconnect(); // Disconnect Pusher on cleanup
+      pusher.unsubscribe('public-chat-channel');
     };
-  }, [user]);
+  }, []);
+
+  const fetchMessages = async (): Promise<void> => {
+    setLoading(true);
+    try {
+      const response = await apiService.get('/chats', {
+        withCredentials: true,
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}` // Add Bearer token here
+        }
+      });
+      setMessages(response.data);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUserChatList = async (): Promise<void> => {
+    setLoading(true);
+    try {
+      const response = await apiService.get('/user-chat-list', {
+        withCredentials: true,
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}` // Add Bearer token here
+        }
+      });
+      setUserChatList(response.data);
+    } catch (error) {
+      console.error('Error fetching user chat list:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendMessage = async (content: string, receiverId: number): Promise<boolean> => {
+    try {
+      const response = await apiService.post(
+        '/send-message',
+        { content, receiver_id: receiverId },
+        {
+          withCredentials: true,
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}` // Add Bearer token here
+          }
+        }
+      );
+      setMessages((prevMessages) => [...prevMessages, response.data]);
+      return true;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      return false;
+    }
+  };
+
+  // Fetch messages and user chat list on component mount
+  useEffect(() => {
+    fetchMessages();
+    fetchUserChatList();
+  }, []);
 
   return (
-    <ChatContext.Provider
-      value={{ chats, sendMessage, fetchChats, fetchUserChatList, firstChatId, userChatList, selectedUserId, setSelectedUserId }}
-    >
+    <ChatContext.Provider value={{ messages, userChatList, fetchMessages, fetchUserChatList, sendMessage, loading }}>
       {children}
-      {error && <div className="error-message">{error}</div>}
     </ChatContext.Provider>
   );
 };
 
-export const useChat = () => {
+export const useChat = (): ChatContextProps => {
   const context = useContext(ChatContext);
   if (!context) {
     throw new Error('useChat must be used within a ChatProvider');

@@ -25,6 +25,7 @@ import BrushIcon from '@mui/icons-material/Brush';
 import PrintIcon from '@mui/icons-material/Print';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import MapIcon from '@mui/icons-material/Map';
+import HomeIcon from '@mui/icons-material/Home';
 
 interface HeaderProps {
   onLocationSelect?: (location: any) => void;
@@ -126,7 +127,7 @@ const Header: React.FC<HeaderProps> = ({ onLocationSelect }) => {
               justifyContent="center"
               mt={10}
             >
-              <Avatar
+              {/* <Avatar
                 src={user.personal_information?.profilepicture || 'https://via.placeholder.com/40'}
                 alt="Profile"
                 sx={{
@@ -134,7 +135,7 @@ const Header: React.FC<HeaderProps> = ({ onLocationSelect }) => {
                   height: isSidebarExpanded ? 64 : 40,
                   transition: 'width 0.3s ease, height 0.3s ease',
                 }}
-              />
+              /> */}
               {isSidebarExpanded && (
                 <NavLink
                   to={`/clients/${user.id}/profile`}
@@ -146,7 +147,14 @@ const Header: React.FC<HeaderProps> = ({ onLocationSelect }) => {
               )}
             </Box>
           )}
-
+                <NavLink to="/user" className="text-white">
+          <ListItem>
+            <ListItemIcon sx={{ color: 'white' }}>
+              <HomeIcon />
+            </ListItemIcon>
+            {isSidebarExpanded && <ListItemText primary="Home" />}
+          </ListItem>
+        </NavLink>
           {/* List of Icons */}
           <List sx={{ mt: 3 }}>
             {/* Dashboard */}
@@ -160,14 +168,14 @@ const Header: React.FC<HeaderProps> = ({ onLocationSelect }) => {
             </NavLink>
 
             {/* Favorites */}
-            <NavLink to="/favorites" className="text-white">
+            {/* <NavLink to="/favorites" className="text-white">
               <ListItem>
                 <ListItemIcon sx={{ color: 'white' }}>
                   <FavoriteIcon />
                 </ListItemIcon>
                 {isSidebarExpanded && <ListItemText primary="Favorites" />}
               </ListItem>
-            </NavLink>
+            </NavLink> */}
 
             {/* Chat */}
             <NavLink to="/chats" className="text-white">
@@ -200,12 +208,20 @@ const Header: React.FC<HeaderProps> = ({ onLocationSelect }) => {
             </NavLink>
 
             {/* My Purchase */}
-            <NavLink to="/my-purchase" className="text-white">
+            <NavLink to="/providerpost" className="text-white">
               <ListItem>
                 <ListItemIcon sx={{ color: 'white' }}>
                   <ShoppingCartIcon />
                 </ListItemIcon>
-                {isSidebarExpanded && <ListItemText primary="My Purchase" />}
+                {isSidebarExpanded && <ListItemText primary="Provider" />}
+              </ListItem>
+            </NavLink>
+            <NavLink to="/designerpost" className="text-white">
+              <ListItem>
+                <ListItemIcon sx={{ color: 'white' }}>
+                  <ShoppingCartIcon />
+                </ListItemIcon>
+                {isSidebarExpanded && <ListItemText primary="Designer" />}
               </ListItem>
             </NavLink>
 

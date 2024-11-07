@@ -9,6 +9,23 @@ export interface PersonalInformation {
   profilepicture: string;
   coverphoto: string;
 }
+export interface Certificate {
+  id: number;
+  file_path: string;
+  file_name: string;
+  created_at: string;
+  updated_at: string;
+  user_id: number;
+}
+
+export interface Portfolio {
+  id: number;
+  file_path: string;
+  file_name: string;
+  created_at: string;
+  updated_at: string;
+  user_id: number;
+}
 
 export interface User {
   id: number;
@@ -17,6 +34,8 @@ export interface User {
   role: Role;
   verified: boolean;
   personal_information: PersonalInformation;
+  certificates?: Certificate[];  // Optional property for certificates
+  portfolios?: Portfolio[];  
 }
 
 interface AuthContextProps {
@@ -92,15 +111,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const fetchAllUsers = async (page: number): Promise<{ data: User[], last_page: number }> => {
     try {
       const response = await apiService.get(`/users?page=${page}`, { withCredentials: true });
+  
       return {
-        data: response.data.users.data,
-        last_page: response.data.users.last_page
+        data: response.data.users.data.map((user: User) => ({
+          ...user,
+          certificates: user.certificates || [],  // Assumes certificates are included in user data
+          portfolios: user.portfolios || [],      // Assumes portfolios are included in user data
+        })),
+        last_page: response.data.users.last_page,
       };
     } catch (error) {
       console.error("Failed to fetch users:", error);
       return { data: [], last_page: 1 };
     }
   };
+  
 
   const acceptUser = async (userId: number, verified: boolean): Promise<boolean> => {
     try {
