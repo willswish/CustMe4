@@ -13,6 +13,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onClose }) =>
     // State variables for form fields
     const [firstname, setFirstname] = useState('');
     const [lastname, setLastname] = useState('');
+    const [zipcode, setZipcode] = useState('');
     const [profilepicture, setProfilePicture] = useState<File | undefined>(undefined);
     const [coverphoto, setCoverPhoto] = useState<File | undefined>(undefined);
 
@@ -21,6 +22,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onClose }) =>
         if (profile?.personal_information && open) {
             setFirstname(profile.personal_information.firstname || '');
             setLastname(profile.personal_information.lastname || '');
+            setZipcode(profile.personal_information.zipcode || ''); // Populate zipcode
             setProfilePicture(undefined); // Reset selected files on modal open
             setCoverPhoto(undefined);
         }
@@ -28,12 +30,16 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onClose }) =>
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
+
+        // Validate that the zipcode is exactly 11 digits
+        if (zipcode.length !== 11 || isNaN(Number(zipcode))) {
+            alert('Phone must be exactly 11 digits long');
+            return;
+        }
+
         if (profile?.id) {
-            await updateProfile(profile.id, { firstname, lastname }, { profilepicture, coverphoto });
-            onClose(); // Close the modal after updating
-            
-            // Reload the page to show the updated profile data
-            window.location.reload();
+            await updateProfile(profile.id, { firstname, lastname, zipcode }, { profilepicture, coverphoto });
+            onClose();
         }
     };
 
@@ -68,6 +74,26 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onClose }) =>
                         onChange={(e) => setLastname(e.target.value)}
                         fullWidth
                         margin="normal"
+                    />
+
+                    {/* Zipcode field */}
+                    <TextField
+                        label="Phone Number"
+                        value={zipcode}
+                        onChange={(e) => setZipcode(e.target.value)}
+                        fullWidth
+                        margin="normal"
+                        inputProps={{
+                            maxLength: 11, // Enforce maximum length of 11
+                            minLength: 11,  // Enforce minimum length of 11
+                            pattern: "[0-9]*", // Only accept numeric input
+                        }}
+                        error={zipcode.length !== 11 || isNaN(Number(zipcode))}
+                        helperText={
+                            zipcode.length !== 11 || isNaN(Number(zipcode)) 
+                            ? 'Zipcode must be exactly 11 digits'
+                            : ''
+                        }
                     />
 
                     {/* Current Profile Picture */}
@@ -127,7 +153,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onClose }) =>
                     )}
 
                     <div className="mt-4">
-                        <Button type="submit" variant="contained" color="primary">Save</Button>
+                        <Button type="submit" variant="contained" color="primary" disabled={zipcode.length !== 11 || isNaN(Number(zipcode))}>Save</Button>
                         <Button onClick={onClose} variant="outlined" color="secondary" className="ml-2">Cancel</Button>
                     </div>
                 </form>

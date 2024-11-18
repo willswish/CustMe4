@@ -20,9 +20,6 @@ class Request extends Model
         'user_id',
         'target_user_id',
         'request_content',
-        'duration_days',
-        'duration_minutes',
-        'completion_deadline',
         'post_id'
 
     ];
@@ -41,16 +38,17 @@ class Request extends Model
     {
         return $this->hasMany(Notification::class, 'request_id', 'request_id'); // 'request_id' as foreign key and primary key
     }
-    public function payment()
-    {
-        return $this->hasOne(Payment::class, 'request_id', 'request_id');
-    }
+
     public function post()
     {
         return $this->belongsTo(Post::class, 'post_id', 'post_id');
     }
-    public function timer()
+    public function initialPayments()
     {
-        return $this->hasOne(Timer::class, 'request_id');
+        return $this->hasMany(InitialPayment::class, 'request_id', 'request_id');
+    }
+    public function targetUserPayments()
+    {
+        return $this->hasMany(InitialPayment::class, 'request_id')->where('user_id', $this->target_user_id);
     }
 }

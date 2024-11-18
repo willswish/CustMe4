@@ -13,12 +13,14 @@ class InitialPayment extends Model
     protected $primaryKey = 'initial_payment_id'; // Specify the primary key
 
     protected $fillable = [
-        'post_id',
+        'request_id',
         'user_id',
         'amount',
+        'payment_type',
         'status',
         'transaction_id',
         'payment_method',
+
     ];
 
     // Define the relationship to the Post model
@@ -31,5 +33,9 @@ class InitialPayment extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+    public function request()
+    {
+        return $this->belongsTo(Request::class, 'request_id', 'request_id');
     }
 }

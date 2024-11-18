@@ -2,7 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useClientProfile } from '../../../context/ClientProfileContext';
 import { useAuth } from '../../../context/AuthContext';
-import { Avatar, Button, Typography, CircularProgress, Box } from '@mui/material';
+import {
+  Avatar,
+  Button,
+  Typography,
+  CircularProgress,
+  Box,
+  Card,
+  CardContent,
+  CardMedia,
+  Grid,
+} from '@mui/material';
 import { Edit as EditIcon } from '@mui/icons-material';
 import Header from '../components/header';
 import EditProfileModal from '../../forms/EditProfileForm';
@@ -40,13 +50,13 @@ const ClientProfile = () => {
     ? `http://127.0.0.1:8000/storage/${profile.personal_information.profilepicture}`
     : 'default-profile-image-url';
 
-  const images = profile.posts
-    .flatMap(post => post.images.map(image => `http://127.0.0.1:8000/storage/${image.image_path}`));
+  const images = profile.posts?.flatMap(post => 
+    post.images.map(image => `http://127.0.0.1:8000/storage/${image.image_path}`)
+  ) || [];
 
-  const isAllowedRole = profile?.role_name === 'Printing Shop' || profile?.role_name === 'Graphic Designer';
-
-  // Check if the visited profile belongs to the authenticated user
+  const isAllowedRole = ['Printing Shop', 'Graphic Designer'].includes(profile?.role_name);
   const canEditProfile = user?.id === userId;
+  const isUserRole = profile?.role_name === 'User';
 
   return (
     <>
@@ -90,33 +100,77 @@ const ClientProfile = () => {
           </div>
         </Box>
 
-        {/* About Me and Carousel Sections */}
-        <Box display="flex" gap={4} mt={4}>
+        {/* Flexbox layout for About Me and Image Carousel */}
+        <Box display="flex" justifyContent="space-between" className="mb-6">
           {/* About Me Section */}
           {isAllowedRole && (
-            <Box flex={1} p={2} bgcolor="white" borderRadius={2} boxShadow={2} className="shadow-lg">
+            <Box flex={1} mr={2} className="shadow-lg rounded-lg p-4 bg-white">
               <Typography variant="h6" gutterBottom>About Me</Typography>
               <AboutMe />
             </Box>
           )}
 
           {/* Image Carousel Section */}
-          <Box flex={1.5} className="shadow-lg rounded-lg p-2 bg-white">
-            <Typography variant="h6" gutterBottom>Image Gallery</Typography>
-            <Carousel>
-              {images.map((src, index) => (
-                <img
-                  key={index}
-                  src={src}
-                  alt={`Image ${index}`}
-                  className="w-full h-48 object-cover rounded-md"
-                />
-              ))}
-            </Carousel>
-          </Box>
+          {isAllowedRole && (
+            <Box flex={1} className="shadow-lg rounded-lg p-2 bg-white">
+              <Typography variant="h6" gutterBottom>Image Gallery</Typography>
+              <Carousel>
+                {images.map((src, index) => (
+                  <img
+                    key={index}
+                    src={src}
+                    alt={`Image ${index}`}
+                    className="w-full h-48 object-cover rounded-md"
+                  />
+                ))}
+              </Carousel>
+            </Box>
+          )}
         </Box>
-      </div>
 
+        {/* User Posts Section */}
+        {isUserRole && profile.posts?.length > 0 && (
+          <div className="shadow-lg rounded-lg p-4">
+            <Typography variant="h6" gutterBottom>Posts</Typography>
+            <Grid container spacing={2}>
+              {profile.posts.map((post) => (
+                <Grid item xs={12} sm={6} md={4} lg={3} key={post.post_id}>
+                  <Card className="shadow-md">
+                    <CardMedia
+                      component="img"
+                      height="180"
+                      image={
+                        post.images.length > 0
+                          ? `http://127.0.0.1:8000/storage/${post.images[0].image_path}`
+                          : 'default-image-url'
+                      }
+                      alt={post.title || 'Post image'}
+                      className="object-cover rounded-t-md"
+                    />
+                    <CardContent>
+                      <Typography
+                        variant="subtitle1"
+                        fontWeight="bold"
+                        noWrap
+                        className="overflow-hidden"
+                      >
+                        {post.title || 'Untitled'}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="textSecondary"
+                        className="truncate"
+                      >
+                        {post.content}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </div>
+        )}
+      </div>
       {/* Edit Profile Modal */}
       <EditProfileModal open={openEditModal} onClose={() => setOpenEditModal(false)} />
     </>

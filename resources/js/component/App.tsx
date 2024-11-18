@@ -14,6 +14,8 @@ import { SearchProvider } from './context/SearchContext';
 import { DesignerProvider } from './context/Desing&ProviderContext';
 import { ArtistAndProviderProvider } from './context/Artist&ProviderContext';
 import { PaymentProvider } from './context/PaymentContext';
+import { AdminPaymentProvider } from './context/AdminPaymentContext';
+import { BalanceRequestProvider } from './context/BalanceRequestContext';
 
 
 const App = () => {
@@ -32,7 +34,12 @@ const App = () => {
                                                     <DesignerProvider>
                                                     <ArtistAndProviderProvider>
                                                     <PaymentProvider>
+                                                        <AdminPaymentProvider>
+                                                            <BalanceRequestProvider>
                                                         <Routes />
+                                                        </BalanceRequestProvider>
+                                                        
+                                                        </AdminPaymentProvider>
                                                     </PaymentProvider>
                                                    </ArtistAndProviderProvider>
                                                     </DesignerProvider>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminPaymentController as ControllersAdminPaymentController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PostController;
@@ -9,6 +10,9 @@ use App\Http\Controllers\Api\StoreController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\SkillController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\AdminPaymentController;
+use App\Http\Controllers\Api\BalanceRequestController;
+use App\Http\Controllers\Api\PayMongoWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Broadcast;
@@ -18,7 +22,7 @@ use Illuminate\Support\Facades\Broadcast;
 Route::middleware(['auth:sanctum'])->group(function () {
     Broadcast::routes();
     Route::get('/current-user', [UserApiController::class, 'currentUser']);
-    Route::get('/users', [UserApiController::class, 'getUsfers']);
+    Route::get('/users', [UserApiController::class, 'getUsers']);
     Route::post('/logout', [UserApiController::class, 'logout']);
     Route::post('/updateUsers/{userId}', [UserApiController::class, 'acceptUser']);
     Route::post('/posts', [PostController::class, 'store']);
@@ -56,6 +60,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::post('/requests/{requestId}/accept/{notificationId}', [RequestController::class, 'accept']);
     Route::post('/requests/{requestId}/decline/{notificationId}', [RequestController::class, 'decline']);
+    Route::post('/user/accept/{requestId}/{notificationId}', [RequestController::class, 'userAccept']);
+    Route::post('/user/decline/{requestId}/{notificationId}', [RequestController::class, 'userDecline']);
 
     Route::get('/userq/{userId}', [UserApiController::class, 'getUserData']);
 
@@ -65,10 +71,24 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::post('/initiate-payment', [PaymentController::class, 'initiatePayment'])->name('payment.initiate');
     Route::post('/pay-for-product', [PaymentController::class, 'payForProduct']);
+    Route::post('/payforproduct80/{requestId}', [PaymentController::class, 'payForProduct80']);
+    Route::post('/create-request', [PaymentController::class, 'createRequest']);
+
+
+
     Route::get('/payment-success', [PaymentController::class, 'paymentSuccess'])->name('payment.success');
+    Route::post('paymongo/webhook', [PayMongoWebhookController::class, 'handleWebhook']);
+
     Route::get('/payment-failed', [PaymentController::class, 'paymentFailed'])->name('payment.failed');
 
     Route::get('/showrequests', [RequestController::class, 'getAllRequests']);
+
+    Route::get('/admin/payments', [AdminPaymentController::class, 'index']);
+    Route::post('/admin/payments/{paymentId}/approve', [AdminPaymentController::class, 'approve']);
+    // Route::post('/user/submit-payment', [AdminPaymentController::class, 'submitPayment']);
+    // Route::get('/user-balance/{userId}', [AdminPaymentController::class, 'getUserBalance']);
+
+    Route::get('/user/{userId}/requests-payments', [PaymentController::class, 'getRequestsWithPayments']);
 
     Broadcast::channel('chat.{receiverId}', function ($user, $receiverId) {
         return (int) $user->id === (int) $receiverId || (int) $user->id === (int) $receiverId;

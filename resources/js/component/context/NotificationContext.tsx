@@ -12,8 +12,6 @@ interface Notification {
   user_id: number;
   target_user_id: number;
   price: string;
-  duration_days: number;
-  duration_minutes: number;
   request_content: string;
   user_role: number; 
   target_user_role: number; 
@@ -24,6 +22,8 @@ interface NotificationContextProps {
   setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
   acceptNotification: (notificationId: number, requestId: number) => Promise<void>;
   declineNotification: (notificationId: number, requestId: number) => Promise<void>;
+  userAccept: (notificationId: number, requestId: number) => Promise<void>;
+  userDecline: (notificationId: number, requestId: number) => Promise<void>;
   selectedNotification: Notification | null;
   setSelectedNotification: (id: number | null) => void;
 }
@@ -87,6 +87,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     };
   }, [user]);
 
+  // Accept notification (method updated for user-specific routes)
   const acceptNotification = async (notificationId: number, requestId: number) => {
     try {
       const response = await apiService.post(`/requests/${requestId}/accept/${notificationId}`, null, {
@@ -94,9 +95,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           Authorization: `Bearer ${localStorage.getItem('authToken')}`,
         },
       });
-  
+
       const updatedNotification = response.data.notification;
-  
+
       // Update the notifications state with the accepted status and timing data
       setNotifications((prevNotifications) =>
         prevNotifications.map((notification) =>
@@ -107,7 +108,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       console.error('Error accepting notification:', error);
     }
   };
-  
+
+  // Decline notification (method updated for user-specific routes)
   const declineNotification = async (notificationId: number, requestId: number) => {
     try {
       await apiService.post(`/requests/${requestId}/decline/${notificationId}`, null, {
@@ -127,6 +129,55 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
   };
 
+  // User accept request (method updated to match route)
+  const userAccept = async (notificationId: number, requestId: number) => {
+    try {
+        const response = await apiService.post(`/user/accept/${requestId}/${notificationId}`, null, {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+            },
+        });
+
+        const updatedNotification = response.data.notification;
+        const checkoutUrl = response.data.checkout_url;
+
+        // Update the notifications state with the accepted status and timing data
+        setNotifications((prevNotifications) =>
+            prevNotifications.map((notification) =>
+                notification.id === notificationId ? { ...notification, ...updatedNotification } : notification
+            )
+        );
+
+        // Open the PayMongo checkout URL in a new window
+        if (checkoutUrl) {
+            window.open(checkoutUrl, '_blank');
+        }
+    } catch (error) {
+        console.error('Error accepting user notification:', error);
+    }
+};
+
+  // User decline request (method updated to match route)
+  const userDecline = async (notificationId: number, requestId: number) => {
+    try {
+      await apiService.post(`/user/decline/${requestId}/${notificationId}`, null, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+        },
+      });
+
+      console.log(`User Notification ${notificationId} declined.`);
+      setNotifications((prevNotifications) =>
+        prevNotifications.map((notification) =>
+          notification.id === notificationId ? { ...notification, status: 'declined' } : notification
+        )
+      );
+    } catch (error) {
+      console.error('Error declining user notification:', error);
+    }
+  };
+
+  // Set selected notification
   const setSelectedNotification = (id: number | null) => {
     const notification = notifications.find((n) => n.request_id === id) || null;
     console.log('Setting selected notification:', notification);
@@ -140,6 +191,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         notifications,
         acceptNotification,
         declineNotification,
+        userAccept,
+        userDecline,
         selectedNotification,
         setSelectedNotification,
       }}

@@ -5,10 +5,7 @@ import Header from '../components/header';
 import { Card, CardContent, CardActions, Typography, Button } from '@mui/material';
 import { usePostContext } from '../../../context/PostContext';
 import { useRequest } from '../../../context/RequestContext';
-import AdminDropdown from '../components/dropdown/admin_dropdown';
-import UserDropdown from '../components/dropdown/user_dropdown';
-import DesignerDropdown from '../components/dropdown/designer_dropdown';
-import PrintingDropdown from '../components/dropdown/printing_dropdown';
+import { useAuth } from '../../../context/AuthContext';
 import RequestModal from '../../requestmore'; // Adjust the path as necessary
 import { useDesignerProviderContext } from '../../../context/Desing&ProviderContext';
 import { format } from 'date-fns';
@@ -31,17 +28,9 @@ interface Image {
 }
 
 const DisplayForm: React.FC = () => {
-  const {
-    posts,
-    currentPage,
-    totalPages,
-    user,
-    deletePost,
-  } = usePostContext();
-  const {
-    fetchDesignerPosts,
-    fetchProviderPosts,
-  } = useDesignerProviderContext();
+  const { user } = useAuth(); // Access user data from useAuth
+  const { posts, currentPage, totalPages, deletePost } = usePostContext();
+  const { fetchDesignerPosts, fetchProviderPosts } = useDesignerProviderContext();
   const { handleRequest } = useRequest();
   const [page, setPage] = useState(currentPage);
   const [modalOpen, setModalOpen] = useState(false);
@@ -163,17 +152,17 @@ const DisplayForm: React.FC = () => {
                 {/* Price, Created and Updated Information */}
                 <div className="mb-3">
                   <Typography variant="body2" color="textPrimary" className="mb-1">
-                    <strong>Pricee:</strong> {post.price ? `₱${post.price}` : 'N/A'}
+                    <strong>Price:</strong> {post.price ? `₱${post.price}` : 'N/A'}
                   </Typography>
                   <Typography variant="body2" color="textPrimary" className="mb-1">
                     <strong>Qauntity:</strong> {post.quantity? `${post.quantity}` : 'N/A'}
                   </Typography>
-                  <Typography variant="body2" color="textSecondary" className="mb-1">
+                  {/* <Typography variant="body2" color="textSecondary" className="mb-1">
                     <strong>Created:</strong> {post.created_at ? formatDate(post.created_at) : 'N/A'}
                   </Typography>
                   <Typography variant="body2" color="textSecondary">
                     <strong>Updated:</strong> {post.updated_at ? formatDate(post.updated_at) : 'N/A'}
-                  </Typography>
+                  </Typography> */}
                 </div>
               </CardContent>
 
@@ -262,7 +251,8 @@ const DisplayForm: React.FC = () => {
             handleClose={() => setModalOpen(false)}
             setRequestContent={setRequestContent}
             selectedPost={selectedPost}
-            targetUserId={targetUserId} // Ensure this is properly defined
+            targetUserId={targetUserId} 
+            role={user?.role?.rolename || 'N/A'} 
           />
       </div>
     </div>

@@ -4,39 +4,33 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str; // Import the Str class
 
 class Payment extends Model
 {
     use HasFactory;
 
-    protected $table = 'payments'; // Specify the table name if it's different
-    protected $primaryKey = 'payment_id'; // Specify the primary key
+    protected $fillable = ['user_id', 'amount', 'qr_code_url', 'status', 'transaction_id'];
 
-    protected $fillable = [
-        'initial_payment_id', // Foreign key for linking to initial payments
-        'user_id',
-        'receiver_id',
-        'amount',
-        'status',
-        'transaction_id',
-        'payment_method',
-    ];
-
-    // Define the relationship to the InitialPayment model
-    public function initialPayment()
+    protected static function boot()
     {
-        return $this->belongsTo(InitialPayment::class, 'initial_payment_id');
+        parent::boot();
+
+        static::creating(function ($payment) {
+            $payment->transaction_id = self::generateUniqueTransactionId();
+        });
     }
 
-    // Define the relationship to the User model (payer)
+    private static function generateUniqueTransactionId()
+    {
+        do {
+            $transactionId = Str::upper(Str::random(10)); // Generates a 10-character random string
+        } while (self::where('transaction_id', $transactionId)->exists());
+        return $transactionId;
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
-    }
-
-    // Define the relationship to the User model (receiver)
-    public function receiver()
-    {
-        return $this->belongsTo(User::class, 'receiver_id');
     }
 }

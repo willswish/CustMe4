@@ -153,6 +153,7 @@ export const ClientProfileProvider: React.FC<ClientProfileProviderProps> = ({ ch
     const formData = new FormData();
     formData.append('firstname', data.firstname || '');
     formData.append('lastname', data.lastname || '');
+    formData.append('zipcode', data.zipcode || '');
 
     if (files?.profilepicture) {
       formData.append('profilepicture', files.profilepicture);

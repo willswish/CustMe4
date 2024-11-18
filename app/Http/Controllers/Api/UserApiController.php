@@ -249,6 +249,7 @@ class UserApiController extends Controller
             'lastname' => 'required|string|max:255',
             'profilepicture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Adjusted for image validation
             'coverphoto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'zipcode' => 'nullable|numeric|digits:11',
         ]);
 
         if ($validator->fails()) {
@@ -263,6 +264,7 @@ class UserApiController extends Controller
         $user->personalInformation()->update([
             'firstname' => $request->firstname,
             'lastname' => $request->lastname,
+            'zipcode' => $request->zipcode ?? $user->personalInformation->zipcode,
             'profilepicture' => $user->personalInformation->profilepicture, // Default current value
             'coverphoto' => $user->personalInformation->coverphoto, // Default current value
         ]);

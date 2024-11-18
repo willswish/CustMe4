@@ -36,6 +36,7 @@ const Header: React.FC<HeaderProps> = ({ onLocationSelect }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  
   const toggleSidebar = () => {
     setIsSidebarExpanded(!isSidebarExpanded); // Toggle sidebar state
   };
@@ -47,6 +48,16 @@ const Header: React.FC<HeaderProps> = ({ onLocationSelect }) => {
     } catch (error) {
       console.error('Logout error:', error);
     }
+  };
+
+  const isUserRole = () => {
+    return user && (user.role.rolename === 'User' );
+  };
+  const isDesingerOrProviderRole = () => {
+    return user && (user.role.rolename === 'Printing Shop' || user.role.rolename === 'Graphic Designer');
+  };
+  const isMultipleRole = () => {
+    return user && (user.role.rolename === 'Printing Shop' || user.role.rolename === 'Graphic Designer'  || user.role.rolename === 'User');
   };
 
   return (
@@ -167,17 +178,17 @@ const Header: React.FC<HeaderProps> = ({ onLocationSelect }) => {
               </ListItem>
             </NavLink>
 
-            {/* Favorites */}
-            {/* <NavLink to="/favorites" className="text-white">
+        {isMultipleRole() && (   
+           <NavLink to="/paymentstable" className="text-white">
               <ListItem>
                 <ListItemIcon sx={{ color: 'white' }}>
                   <FavoriteIcon />
                 </ListItemIcon>
-                {isSidebarExpanded && <ListItemText primary="Favorites" />}
+                {isSidebarExpanded && <ListItemText primary="Transaction" />}
               </ListItem>
-            </NavLink> */}
-
-            {/* Chat */}
+            </NavLink>
+          )}
+          
             <NavLink to="/chats" className="text-white">
               <ListItem>
                 <ListItemIcon sx={{ color: 'white' }}>
@@ -187,7 +198,7 @@ const Header: React.FC<HeaderProps> = ({ onLocationSelect }) => {
               </ListItem>
             </NavLink>
 
-            {/* Designer */}
+            {isUserRole() && (  
             <NavLink to="/providerdesigner" className="text-white">
               <ListItem>
                 <ListItemIcon sx={{ color: 'white' }}>
@@ -196,8 +207,18 @@ const Header: React.FC<HeaderProps> = ({ onLocationSelect }) => {
                 {isSidebarExpanded && <ListItemText primary="Designer" />}
               </ListItem>
             </NavLink>
-
-            {/* Print Shop */}
+              )}
+      {isDesingerOrProviderRole () && (   
+            <NavLink to="/clientpost" className="text-white">
+              <ListItem>
+                <ListItemIcon sx={{ color: 'white' }}>
+                  <BrushIcon />
+                </ListItemIcon>
+                {isSidebarExpanded && <ListItemText primary="Clients" />}
+              </ListItem>
+            </NavLink>
+          )}
+            {/* Print Shop
             <NavLink to="/allposts" className="text-white">
               <ListItem>
                 <ListItemIcon sx={{ color: 'white' }}>
@@ -205,10 +226,10 @@ const Header: React.FC<HeaderProps> = ({ onLocationSelect }) => {
                 </ListItemIcon>
                 {isSidebarExpanded && <ListItemText primary="Allposts" />}
               </ListItem>
-            </NavLink>
+            </NavLink> */}
 
             {/* My Purchase */}
-            <NavLink to="/providerpost" className="text-white">
+            {/* <NavLink to="/providerpost" className="text-white">
               <ListItem>
                 <ListItemIcon sx={{ color: 'white' }}>
                   <ShoppingCartIcon />
@@ -223,7 +244,7 @@ const Header: React.FC<HeaderProps> = ({ onLocationSelect }) => {
                 </ListItemIcon>
                 {isSidebarExpanded && <ListItemText primary="Designer" />}
               </ListItem>
-            </NavLink>
+            </NavLink> */}
 
         
         
@@ -238,14 +259,27 @@ const Header: React.FC<HeaderProps> = ({ onLocationSelect }) => {
             </NavLink>
           </List>
 
-      <NavLink to="/getlocation" className="text-white">
-      <ListItem>
-        <ListItemIcon sx={{ color: 'white' }}>
-          <MapIcon />
-        </ListItemIcon>
-        {isSidebarExpanded && <ListItemText primary="Nearby" />}
-      </ListItem>
-    </NavLink>
+      {isUserRole() && (         
+            <NavLink to="/getlocation" className="text-white">
+            <ListItem>
+              <ListItemIcon sx={{ color: 'white' }}>
+                <MapIcon />
+              </ListItemIcon>
+              {isSidebarExpanded && <ListItemText primary="Nearby" />}
+            </ListItem>
+          </NavLink>
+          )}
+
+      {isDesingerOrProviderRole() && (         
+                  <NavLink to="/share-location" className="text-white">
+                  <ListItem>
+                    <ListItemIcon sx={{ color: 'white' }}>
+                      <MapIcon />
+                    </ListItemIcon>
+                    {isSidebarExpanded && <ListItemText primary="Add location" />}
+                  </ListItem>
+                </NavLink>
+                )}
 
           {/* Logout */}
           <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'center' }}>

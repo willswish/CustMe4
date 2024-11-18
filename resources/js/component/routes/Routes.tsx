@@ -30,6 +30,8 @@ import ProviderPostForm from '../views/forms/Admin/provideForm';
 import Allpost from '../views/forms/Admin/MyPost1Form';
 import PaymentSuccess from '../views/PaymentSuccess';
 import PaymentFailed from '../views/PaymentFailed';
+import Balance from '../views/UserBalance';
+import PaymentsTable from '../views/UserBalance';
 
 
 const AppRoutes = () => {
@@ -56,6 +58,8 @@ const AppRoutes = () => {
       <Route element={<ProtectedRoutes roles={['User']} />}>
         <Route path="/user" element={<UserHome />} />
         <Route path="/getlocation" element={<MapView />} />
+        {/* <Route path="/userbalance" element={<Balance />} /> */}
+
         {/* <Route path="/List-of-Desinger&Printing-Provider" element={<ArtistPrintingProviders />} /> */}
       </Route>
 
@@ -89,6 +93,7 @@ const AppRoutes = () => {
         <Route path="/allposts" element={<Allpost />} />
         <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/payment/failed" element={<PaymentFailed message="Payment not found." />} />
+        <Route path="/paymentstable" element={<PaymentsTable />} />
 
       </Route>
 

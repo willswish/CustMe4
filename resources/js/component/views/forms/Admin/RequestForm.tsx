@@ -1,21 +1,28 @@
 import React, { useState } from 'react';
-import { Box, Typography, Button, Paper, Divider, Modal, CircularProgress } from '@mui/material';
+import { Box, Typography, Button, Paper, Divider, Modal } from '@mui/material';
 import { useNotification } from '../../../context/NotificationContext';
 import { useAuth } from '../../../context/AuthContext';
-import { usePayment } from '../../../context/PaymentContext';
 import { useLocation } from 'react-router-dom';
 import Header from '../components/header';
 
 const RequestForm: React.FC = () => {
-    const { notifications, acceptNotification, declineNotification, selectedNotification, setSelectedNotification } = useNotification();
-    const { initiatePayment, loading } = usePayment();
-    const { user } = useAuth();
+    const { notifications, acceptNotification, declineNotification, userAccept, userDecline, selectedNotification, setSelectedNotification } = useNotification();
+    const { user } = useAuth(); // Access user info, including role
     const [isModalOpen, setModalOpen] = useState(false);
 
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const successMessage = queryParams.get('success_message');
     const errorMessage = queryParams.get('error_message');
+
+    // Helper functions to check user role
+    const isUserRole = () => {
+        return user && user.role.rolename === 'User';
+    };
+
+    const isDesignerOrProviderRole = () => {
+        return user && (user.role.rolename === 'Printing Shop' || user.role.rolename === 'Graphic Designer');
+    };
 
     const handleNotificationClick = (notification: any) => {
         setSelectedNotification(notification);
@@ -25,23 +32,6 @@ const RequestForm: React.FC = () => {
     const handleCloseModal = () => {
         setSelectedNotification(null);
         setModalOpen(false);
-    };
-
-    const handlePayment = async (requestId: number, amount: number, userRole: number, targetUserRole: number, userId: number, targetUserId: number) => {
-        let payerId;
-
-        if (userRole === 2 || targetUserRole === 2) {
-            payerId = userRole === 2 ? userId : targetUserId;
-        } else {
-            payerId = userId;
-        }
-
-        const checkoutUrl = await initiatePayment(requestId, amount, payerId);
-        if (checkoutUrl) {
-            window.location.href = checkoutUrl;
-        } else {
-            console.error('Failed to initiate payment');
-        }
     };
 
     return (
@@ -59,7 +49,7 @@ const RequestForm: React.FC = () => {
             )}
             {notifications.length > 0 ? (
                 notifications.map((notification) => {
-                    const { id, status, request_id, content, created_at, target_user_id, price, user_role, target_user_role } = notification;
+                    const { id, status, request_id, content, created_at, target_user_id } = notification;
 
                     const bgColor =
                         status === 'accepted' ? 'rgba(16, 185, 129, 0.1)' :
@@ -81,32 +71,69 @@ const RequestForm: React.FC = () => {
                                     {new Date(created_at).toLocaleString()}
                                 </Typography>
                                 <Divider sx={{ my: 1 }} />
+
+                                {/* Show buttons based on status and user role */}
                                 {status === 'pending' && (
                                     <Box display="flex" gap={1}>
-                                        <Button
-                                            variant="contained"
-                                            color="primary"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                acceptNotification(id, request_id);
-                                            }}
-                                            className="bg-blue-500 hover:bg-blue-600"
-                                        >
-                                            Accept
-                                        </Button>
-                                        <Button
-                                            variant="outlined"
-                                            color="secondary"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                declineNotification(id, request_id);
-                                            }}
-                                            className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
-                                        >
-                                            Decline
-                                        </Button>
+                                        {/* Conditional button rendering for Designers/Printing Shops */}
+                                        {isDesignerOrProviderRole() && (
+                                            <>
+                                                <Button
+                                                    variant="contained"
+                                                    color="primary"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        acceptNotification(id, request_id);  // Designer or Printing Shop Accept
+                                                    }}
+                                                    className="bg-blue-500 hover:bg-blue-600"
+                                                >
+                                                    Accept
+                                                </Button>
+                                                <Button
+                                                    variant="outlined"
+                                                    color="secondary"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        declineNotification(id, request_id);  // Designer or Printing Shop Decline
+                                                    }}
+                                                    className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                                                >
+                                                    Decline
+                                                </Button>
+                                            </>
+                                        )}
+
+                                        {/* Conditional button rendering for Users */}
+                                        {isUserRole() && (
+                                            <>
+                                                <Button
+                                                    variant="contained"
+                                                    color="primary"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        userAccept(id, request_id);  // User Accept
+                                                    }}
+                                                    className="bg-blue-500 hover:bg-blue-600"
+                                                >
+                                                    Accept
+                                                </Button>
+                                                <Button
+                                                    variant="outlined"
+                                                    color="secondary"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        userDecline(id, request_id);  // User Decline
+                                                    }}
+                                                    className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                                                >
+                                                    Decline
+                                                </Button>
+                                            </>
+                                        )}
                                     </Box>
                                 )}
+
+                                {/* Render accepted/declined status messages */}
                                 {status === 'accepted' && user && target_user_id === user.id && (
                                     <Typography variant="body2" className="text-green-600 mt-2">
                                         You accepted this request.
@@ -118,23 +145,6 @@ const RequestForm: React.FC = () => {
                                     </Typography>
                                 )}
                             </div>
-
-                            {status === 'accepted' && (
-                                <div>
-                                    <Button
-                                        variant="contained"
-                                        color="primary"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handlePayment(request_id, Number(price), user_role, target_user_role, notification.user_id, target_user_id);
-                                        }}
-                                        className="mt-2"
-                                        disabled={loading}
-                                    >
-                                        {loading ? <CircularProgress size={24} /> : 'Pay Now'}
-                                    </Button>
-                                </div>
-                            )}
                         </Paper>
                     );
                 })

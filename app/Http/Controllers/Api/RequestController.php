@@ -6,12 +6,15 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Request as UserRequest;
 use App\Models\Notification;
+use App\Models\Post;
 use App\Models\Timer;
 use App\Events\NotificationEvent;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Services\TimerService;
+use App\Models\InitialPayment;
+use Illuminate\Support\Facades\Http;
 
 
 
@@ -26,8 +29,7 @@ class RequestController extends Controller
             'post_id' => 'required|exists:posts,post_id',
             'content' => 'required|string', // This will be for the notification content
             'request_content' => 'required|string', // Validate request content for the requests table
-            'duration_days' => 'nullable|integer|min:0', // Validate duration days
-            'duration_minutes' => 'nullable|integer|min:0', // Validate duration minutes
+
 
         ]);
 
@@ -35,10 +37,7 @@ class RequestController extends Controller
         Log::info('Validated request data:', $validated);
 
         // Calculate the completion deadline based on duration
-        $completionDeadline = $this->calculateCompletionDeadline(
-            $validated['duration_days'] ?? 0,
-            $validated['duration_minutes'] ?? 0
-        );
+
 
         // Log the payload that will be sent to the database
         Log::info('UserRequest payload:', [
@@ -46,9 +45,7 @@ class RequestController extends Controller
             'post_id' => $validated['post_id'],
             'target_user_id' => $validated['target_user_id'],
             'request_content' => $validated['request_content'],
-            'duration_days' => $validated['duration_days'] ?? null,
-            'duration_minutes' => $validated['duration_minutes'] ?? null,
-            'completion_deadline' => $completionDeadline,
+
         ]);
 
         // Create the user request and include duration information
@@ -59,9 +56,7 @@ class RequestController extends Controller
             'request_type' => 'product_request',
             'status' => 'pending',
             'request_content' => $validated['request_content'], // Store the request content here
-            'duration_days' => $validated['duration_days'] ?? null,
-            'duration_minutes' => $validated['duration_minutes'] ?? null,
-            'completion_deadline' => $completionDeadline, // Set the completion deadline
+
 
         ]);
 
@@ -83,19 +78,6 @@ class RequestController extends Controller
         return response()->json(['message' => 'Request created and notification sent.'], 201);
     }
 
-    // Function to calculate completion deadline
-    private function calculateCompletionDeadline($days = 0, $minutes = 0)
-    {
-        $now = new \DateTime(); // Use the leading backslash to indicate the global namespace
-        if ($days > 0) {
-            $now->modify("+{$days} days");
-        }
-        if ($minutes > 0) {
-            $now->modify("+{$minutes} minutes");
-        }
-        return $now->format('Y-m-d H:i:s'); // Ensure correct format for MySQL
-    }
-
 
     public function accept(Request $request, $requestId, $notificationId)
     {
@@ -106,11 +88,22 @@ class RequestController extends Controller
             $userRequest->status = 'accepted';
             $userRequest->save();
 
+            $payment = InitialPayment::where('request_id', $requestId)->first(); // Find the first matching payment by foreign key
+            if ($payment) {
+                $payment->status = 'initiated'; // Update the payment status to 'refunded'
+                $payment->save();
+                Log::info('Updated payment status to refunded for request_id: ' . $requestId);
+            } else {
+                Log::error('No InitialPayment found with request_id: ' . $requestId);
+                return response()->json(['error' => 'Payment not found'], 404); // Return error response if payment is not found
+            }
+
             // Create a notification for the sender
             $notification = Notification::create([
                 'content' => $request->user()->username . ' has accepted your request.',
                 'status' => 'accepted',
                 'user_id' => $userRequest->user_id,
+                'target_user_id' => $userRequest->target_user_id,
                 'request_id' => $userRequest->request_id,
             ]);
 
@@ -136,11 +129,21 @@ class RequestController extends Controller
             $userRequest->status = 'declined'; // Update the status
             $userRequest->save();
 
-            // Create a notification for the sender
+            $payment = InitialPayment::where('request_id', $requestId)->first(); // Find the first matching payment by foreign key
+            if ($payment) {
+                $payment->status = 'refunded'; // Update the payment status to 'refunded'
+                $payment->save();
+                Log::info('Updated payment status to refunded for request_id: ' . $requestId);
+            } else {
+                Log::error('No InitialPayment found with request_id: ' . $requestId);
+                return response()->json(['error' => 'Payment not found'], 404); // Return error response if payment is not found
+            }
+
             $notification = Notification::create([
-                'content' => 'User @' . $request->user()->username . ' has declined your request.',
+                'content' => $request->user()->username . ' has declined your request.',
                 'status' => 'unread',
                 'user_id' => $userRequest->user_id, // Notify the original sender
+                'target_user_id' => $userRequest->target_user_id,
                 'request_id' => $userRequest->request_id,
             ]);
 
@@ -169,5 +172,140 @@ class RequestController extends Controller
         return response()->json([
             'requests' => $requests,
         ]);
+    }
+
+    public function userAccept(Request $request, $requestId, $notificationId)
+    {
+        try {
+            $userId = auth()->id();
+            Log::debug('User ID:', ['user_id' => $userId]);
+
+            $userRequest = UserRequest::findOrFail($requestId);
+            Log::debug('User Request:', ['request_id' => $requestId, 'user_request' => $userRequest]);
+
+            $notification = Notification::findOrFail($notificationId); // Retrieve the notification
+            Log::debug('Notification:', ['notification_id' => $notificationId, 'notification' => $notification]);
+
+            // Ensure the target user is a Graphic Designer or Printing Provider
+            if ($userRequest->target_user_id !== $userId) {
+                Log::warning('Unauthorized user attempting to accept request', ['target_user_id' => $userRequest->target_user_id, 'user_id' => $userId]);
+                return response()->json(['error' => 'Unauthorized.'], 403);
+            }
+
+            // Retrieve the initial payment record
+            $initialPayment = InitialPayment::where('request_id', $requestId)->first();
+            if (!$initialPayment) {
+                Log::warning('Initial payment not found', ['request_id' => $requestId]);
+                return response()->json(['error' => 'Initial payment not found.'], 404);
+            }
+            Log::debug('Initial Payment:', ['initial_payment' => $initialPayment]);
+
+            // Check if price is available in the user request, otherwise get from the related post
+            $price = $userRequest->price;
+
+            if ($price === null && $userRequest->post_id) {
+                // Fetch the price from the related Post using the foreign key post_id
+                $post = Post::find($userRequest->post_id);
+                if ($post && $post->price) {
+                    $price = $post->price;
+                    Log::debug('Price retrieved from Post:', ['price' => $price, 'post_id' => $userRequest->post_id]);
+                } else {
+                    Log::warning('Price not found in Post', ['post_id' => $userRequest->post_id]);
+                    return response()->json(['error' => 'Price is missing in both the request and related post.'], 400);
+                }
+            }
+
+            Log::debug('Price:', ['price' => $price]);
+
+            // Calculate 20% of the price
+            $paymentAmount = $price * 0.2;
+            Log::debug('Calculated Payment Amount (20%):', ['payment_amount' => $paymentAmount]);
+
+            // Update the payment amount
+            $initialPayment->update([
+                'amount' => $paymentAmount,
+            ]);
+            Log::debug('Initial Payment Updated:', ['updated_payment_amount' => $paymentAmount]);
+
+            // Create a PayMongo Checkout link
+            $payMongoResponse = Http::withHeaders([
+                'Authorization' => 'Basic ' . base64_encode(env('PAYMONGO_SECRET_KEY') . ':'),
+            ])->post('https://api.paymongo.com/v1/links', [
+                'data' => [
+                    'attributes' => [
+                        'amount' => $paymentAmount * 100, // Amount in cents
+                        'description' => 'Payment for request ' . $requestId,
+                        'payment_method' => 'gcash',
+                    ]
+                ]
+            ]);
+
+            if ($payMongoResponse->failed()) {
+                Log::error('PayMongo API request failed', ['response' => $payMongoResponse->json()]);
+                return response()->json(['error' => 'Failed to create PayMongo link.'], 500);
+            }
+
+            // Return the checkout URL to open in a separate window
+            $checkoutUrl = $payMongoResponse->json()['data']['attributes']['checkout_url'];
+            Log::debug('Checkout URL:', ['checkout_url' => $checkoutUrl]);
+
+            // Update the notification to mark the action taken (accepted)
+            $notification->update([
+                'status' => 'accepted',
+            ]);
+            Log::debug('Notification Updated:', ['notification_status' => 'accepted']);
+
+            return response()->json([
+                'message' => 'Request accepted successfully.',
+                'checkout_url' => $checkoutUrl
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in userAccept method', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Error accepting the request: ' . $e->getMessage()], 500);
+        }
+    }
+
+
+    public function userDecline(Request $request, $requestId, $notificationId)
+    {
+        try {
+            $userId = auth()->id();
+            $userRequest = UserRequest::findOrFail($requestId);
+            $notification = Notification::findOrFail($notificationId); // Retrieve the notification
+
+            // Ensure the target user is a Graphic Designer or Printing Provider
+            if ($userRequest->target_user_id !== $userId) {
+                return response()->json(['error' => 'Unauthorized.'], 403);
+            }
+
+            // Update request status to 'failed'
+            $userRequest->update([
+                'status' => 'declined',
+            ]);
+
+            $payment = InitialPayment::where('request_id', $requestId)->first(); // Find the first matching payment by foreign key
+            if ($payment) {
+                $payment->status = 'refunded'; // Update the payment status to 'refunded'
+                $payment->save();
+                Log::info('Updated payment status to refunded for request_id: ' . $requestId);
+            } else {
+                Log::error('No InitialPayment found with request_id: ' . $requestId);
+                return response()->json(['error' => 'Payment not found'], 404); // Return error response if payment is not found
+            }
+
+            $notification = Notification::create([
+                'content' => $request->user()->username . ' has declined your request.',
+                'status' => 'unread',
+                'user_id' => $userRequest->user_id, // Notify the original sender
+                'target_user_id' => $userRequest->target_user_id,
+                'request_id' => $userRequest->request_id,
+            ]);
+
+            return response()->json([
+                'message' => 'Request declined successfully.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error declining the request: ' . $e->getMessage()], 500);
+        }
     }
 }

@@ -5,6 +5,7 @@ import { usePostContext } from '../../../context/PostContext'; // Assuming your 
 import Header from '../components/header';
 import RequestModal from '../../requestmore'; // Import your request modal component
 import { useRequest } from '../../../context/RequestContext'; // Assuming your handleRequest function path is correct
+import { useAuth } from '../../../context/AuthContext';
 
 const PostCard = ({ post, onRequestSubmit }) => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -84,9 +85,9 @@ const ClientPost = () => {
   const { posts, fetchClientPosts } = usePostContext();
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<number | null>(null);
+  const [targetUserId, setTargetUserId] = useState<number | null>(null);
   const [requestContent, setRequestContent] = useState('');
-  const [durationDays, setDurationDays] = useState<number | undefined>(undefined);
-  const [durationMinutes, setDurationMinutes] = useState<number | undefined>(undefined);
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchClientPosts(1, 10); // Fetching the first 10 client posts when component mounts
@@ -94,7 +95,11 @@ const ClientPost = () => {
 
   const handleRequestButtonClick = (post) => {
     setSelectedPost(post.post_id);
+    setTargetUserId(post.user_id);
     setModalOpen(true);
+
+    // Debug: Log the selected post data
+    console.log('Selected Post:', post);
   };
 
   const handleRequestSubmit = async () => {
@@ -104,20 +109,23 @@ const ClientPost = () => {
       if (selectedPostData) {
         const userId = selectedPostData.user_id; // Get the user_id from the found post
 
+        // Debug: Log the request data being passed
+        console.log('Submitting request with data:', {
+          selectedPost,
+          userId,
+          requestContent,
+        });
+
         await handleRequest(
           selectedPost,
           userId,
           requestContent,
-          durationDays ?? 0, // Pass the duration days, using 0 as default if undefined
-          durationMinutes ?? 0 // Pass the duration minutes, using 0 as default if undefined
+          // Pass the duration minutes, using 0 as default if undefined
         );
 
         setModalOpen(false); // Close the modal after submitting
         // Reset fields
         setRequestContent('');
-        setDurationDays(undefined);
-        setDurationMinutes(undefined);
-        
       } else {
         console.error('Selected post not found');
       }
@@ -139,6 +147,7 @@ const ClientPost = () => {
           <Typography>No client posts available</Typography>
         )}
       </div>
+      
 
       {/* Request Modal */}
       <RequestModal
@@ -146,8 +155,9 @@ const ClientPost = () => {
         handleClose={() => setModalOpen(false)}
         handleSubmit={handleRequestSubmit}
         setRequestContent={setRequestContent}
-        setDurationDays={setDurationDays}
-        setDurationMinutes={setDurationMinutes}
+        targetUserId={targetUserId} 
+        role={user.role.rolename}
+        selectedPost={selectedPost}
       />
     </div>
   );

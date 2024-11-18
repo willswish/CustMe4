@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('requests', function (Blueprint $table) {
             $table->id('request_id');
             $table->string('request_type');
-            $table->string('status');
+            $table->enum('status', ['pending', 'accepted', 'declined', 'refunded', '20% paid', 'file_uploaded', 'completed'])->default('pending');
             $table->timestamp('timestamp')->useCurrent();
             $table->timestamps();
 
@@ -28,9 +28,6 @@ return new class extends Migration
             $table->foreign('post_id')->references('post_id')->on('posts')->onDelete('cascade');
 
             $table->text('request_content')->nullable();
-            $table->integer('duration_days')->nullable();
-            $table->integer('duration_minutes')->nullable();
-            $table->timestamp('completion_deadline')->nullable();
         });
     }
 

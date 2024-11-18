@@ -11,18 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('notifications', function (Blueprint $table) {
+        Schema::create('balance_requests', function (Blueprint $table) {
             $table->id();
-            $table->text('content');
-            $table->string('status');
-            $table->timestamp('timestamp')->useCurrent();
-
-            $table->timestamps();
-
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->unsignedBigInteger('request_id')->nullable();
-            $table->foreign('request_id')->references('request_id')->on('requests')->onDelete('cascade');
+            $table->decimal('amount', 10, 2); // the requested amount
+            $table->enum('status', ['pending', 'approved', 'rejected']); // status of the request
+            $table->timestamps();
         });
     }
 
@@ -31,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('notifications');
+        Schema::dropIfExists('balance_requests');
     }
 };

@@ -8,6 +8,7 @@ interface RequestModalProps {
   setRequestContent: Dispatch<SetStateAction<string>>;
   selectedPost: number | null;
   targetUserId: number;
+  role: string;  // Role is passed as a prop now
 }
 
 const RequestModal: React.FC<RequestModalProps> = ({
@@ -16,6 +17,7 @@ const RequestModal: React.FC<RequestModalProps> = ({
   setRequestContent,
   selectedPost,
   targetUserId,
+  role,  // Receiving role as a prop
 }) => {
   const [requestContent, setLocalRequestContent] = useState('');
 
@@ -36,18 +38,26 @@ const RequestModal: React.FC<RequestModalProps> = ({
       // Prepare data for request
       setRequestContent(requestContent);
 
-      // Send the request to create InitialPayment and Request models and get checkout URL
-      const response = await apiServices.post('/pay-for-product', {
+      // Determine the API endpoint based on the user's role
+      const apiEndpoint = role === 'User' 
+        ? '/pay-for-product'  // For User, use 'pay-for-product'
+        : '/create-request';  // For Graphic Designers or Printing Shops, use 'create-request'
+
+      // Send the request to create InitialPayment and Request models
+      const response = await apiServices.post(apiEndpoint, {
         post_id: selectedPost,
-        target_user_id: targetUserId,  
+        target_user_id: targetUserId,
         request_content: requestContent,
       });
 
-      const checkoutUrl = response.data.checkout_url;
-      if (checkoutUrl) {
-        window.open(checkoutUrl, '_blank'); // Open in a new tab
-      } else {
-        console.error("Checkout session failed: No checkout URL received");
+      if (role === 'User') {
+        // For User, get the checkout URL and open it in a new tab
+        const checkoutUrl = response.data.checkout_url;
+        if (checkoutUrl) {
+          window.open(checkoutUrl, '_blank');
+        } else {
+          console.error("Checkout session failed: No checkout URL received");
+        }
       }
 
       handleClose();
@@ -79,7 +89,7 @@ const RequestModal: React.FC<RequestModalProps> = ({
           Cancel
         </Button>
         <Button onClick={handleSubmitWrapper} color="primary">
-          Submit and Pay 20%
+          {role === 'User' ? 'Submit and Pay 20%' : 'Submit'}
         </Button>
       </DialogActions>
     </Dialog>

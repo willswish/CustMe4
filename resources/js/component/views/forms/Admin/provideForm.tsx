@@ -7,6 +7,7 @@ import { useRequest } from '../../../context/RequestContext';
 import RequestModal from '../../requestmore'; // Adjust the path as necessary
 import { useDesignerProviderContext } from '../../../context/Desing&ProviderContext';
 import { usePostContext } from '../../../context/PostContext';
+import { useAuth } from '../../../context/AuthContext'; 
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -28,6 +29,7 @@ interface Image {
 const ProviderPostForm: React.FC = () => {
   const { fetchProviderPosts } = useDesignerProviderContext();
   const { handleRequest } = useRequest();
+  const { user: authUser } = useAuth();
   const {  deletePost, user } = usePostContext(); // Access user and deletePost from context
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<number | null>(null);
@@ -138,12 +140,12 @@ const ProviderPostForm: React.FC = () => {
                   <Typography variant="body2" color="textPrimary" className="mb-1">
                     <strong>Price:</strong> {post.price ? `₱${post.price}` : 'N/A'}
                   </Typography>
-                  <Typography variant="body2" color="textSecondary" className="mb-1">
+                  {/* <Typography variant="body2" color="textSecondary" className="mb-1">
                     <strong>Created:</strong> {post.created_at ? formatDate(post.created_at) : 'N/A'}
                   </Typography>
                   <Typography variant="body2" color="textSecondary">
                     <strong>Updated:</strong> {post.updated_at ? formatDate(post.updated_at) : 'N/A'}
-                  </Typography>
+                  </Typography> */}
                 </div>
               </CardContent>
               <CardActions className="flex flex-row justify-between items-center">
@@ -229,6 +231,7 @@ const ProviderPostForm: React.FC = () => {
           setRequestContent={setRequestContent}
           selectedPost={selectedPost}
           targetUserId={targetUserId}
+          role={authUser?.role?.rolename || 'N/A'}
         />
       </div>
     </div>

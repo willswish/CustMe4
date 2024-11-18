@@ -7,6 +7,7 @@ import { useRequest } from '../../../context/RequestContext';
 import RequestModal from '../../requestmore'; // Adjust the path as necessary
 import { useDesignerProviderContext } from '../../../context/Desing&ProviderContext';
 import { usePostContext } from '../../../context/PostContext'; // Import PostContext
+import { useAuth } from '../../../context/AuthContext'; 
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -28,6 +29,7 @@ interface Image {
 const DesignerPostForm: React.FC = () => {
   const { fetchDesignerPosts } = useDesignerProviderContext();
   const { handleRequest } = useRequest();
+  const { user: authUser } = useAuth();
   const { user, deletePost } = usePostContext(); // Access user from context
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<number | null>(null);
@@ -63,8 +65,9 @@ const DesignerPostForm: React.FC = () => {
     navigate("/chats", { state: { userId } });
   };
 
-  const handleRequestButtonClick = (postId: number) => {
+  const handleRequestButtonClick = (postId: number, postUserId: number) => {   
     setSelectedPost(postId);
+    setTargetUserId(postUserId);
     setModalOpen(true);
   };
 
@@ -123,24 +126,24 @@ const DesignerPostForm: React.FC = () => {
                 </Typography>
                 <div className="mb-3">
                   <Typography variant="body2" color="textPrimary" className="mb-1">
-                    <strong>Price:</strong> {post.price ? `z${post.price}` : 'N/A'}
+                    <strong>Price:</strong> {post.price ? `${post.price}` : 'N/A'}
                   </Typography>
                   <Typography variant="body2" color="textPrimary" className="mb-1">
-                    <strong>Quantity:</strong> {post.quantity ? `₱${post.quantity}` : 'N/A'}
+                    <strong>Quantity:</strong> {post.quantity ? `${post.quantity}` : 'N/A'}
                   </Typography>
-                  <Typography variant="body2" color="textSecondary" className="mb-1">
+                  {/* <Typography variant="body2" color="textSecondary" className="mb-1">
                     <strong>Created:</strong> {post.created_at ? formatDate(post.created_at) : 'N/A'}
                   </Typography>
                   <Typography variant="body2" color="textSecondary">
                     <strong>Updated:</strong> {post.updated_at ? formatDate(post.updated_at) : 'N/A'}
-                  </Typography>
+                  </Typography> */}
                 </div>
               </CardContent>
               <CardActions className="flex flex-row justify-between items-center">
                 <div className="flex flex-row space-x-2">
                   {post.user_id !== user.id && (
                     <Button
-                      onClick={() => handleRequestButtonClick(post.post_id)}
+                      onClick={() => handleRequestButtonClick(post.post_id, post.user_id)}
                       variant="outlined"
                       startIcon={<FaPaperPlane />}
                       size="small"
@@ -210,6 +213,7 @@ const DesignerPostForm: React.FC = () => {
           setRequestContent={setRequestContent}
           selectedPost={selectedPost}
           targetUserId={targetUserId}
+          role={authUser?.role?.rolename || 'N/A'}
         />
       </div>
     </div>
