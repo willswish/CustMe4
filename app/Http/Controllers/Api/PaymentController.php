@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\InitialPayment;
 use App\Models\Request as RequestModel;
 use App\Models\Post;
-
+use App\Models\PersonalInformation;
 use App\Events\NotificationEvent;
 use App\Models\Notification;
 use Illuminate\Http\Request as HttpRequest;
@@ -121,6 +121,14 @@ class PaymentController extends Controller
                 return response()->json(['error' => 'Target user ID is required to create a notification.'], 400);
             }
 
+            // Fetch personal information of the user to get name and phone number
+            $personalInformation = PersonalInformation::where('user_id', $userId)->first();
+            if (!$personalInformation) {
+                Log::error('Personal information not found for the user.');
+                return response()->json(['error' => 'Personal information not found for the user.'], 400);
+            }
+
+            // Create a notification for the target user
             $notification = Notification::create([
                 'content' => $request->user()->username . ' has requested for your service.',
                 'status' => 'unread',
@@ -130,7 +138,6 @@ class PaymentController extends Controller
             Log::info('Notification created:', $notification->toArray());
             broadcast(new NotificationEvent($notification));
 
-
             // Send a request to PayMongo to create a checkout session
             $response = $client->post('https://api.paymongo.com/v1/checkout_sessions', [
                 'json' => [
@@ -139,7 +146,7 @@ class PaymentController extends Controller
                             'amount' => $amount,
                             'currency' => 'PHP',
                             'description' => 'Initial Payment for Post ' . $postId,
-                            'send_email_receipt' => true,
+                            'send_email_receipt' => true, // Send email receipt
                             'line_items' => [
                                 [
                                     'name' => 'Product Purchase',
@@ -149,7 +156,13 @@ class PaymentController extends Controller
                                     'quantity' => 1
                                 ]
                             ],
-                            'payment_method_types' => ['gcash', 'card']
+                            'payment_method_types' => ['gcash', 'card'],
+                            'billing' => [
+                                'name' => $personalInformation->firstname . ' ' . $personalInformation->lastname,
+                                'email' => $request->user()->email, // Use the user's email for receipt
+                                'phone' => $personalInformation->zipcode,
+
+                            ]
                         ]
                     ]
                 ],
@@ -165,6 +178,13 @@ class PaymentController extends Controller
                 // Retrieve the checkout session ID from PayMongo's response
                 $checkoutSessionId = $responseBody['data']['id']; // This is the unique session ID
                 $checkoutUrl = $responseBody['data']['attributes']['checkout_url'];
+
+                // Log the billing details for debugging
+                Log::debug('Retrieved billing details:', [
+                    'name' => $personalInformation->first_name . ' ' . $personalInformation->last_name,
+                    'email' => $request->user()->email,
+                    'phone' => $personalInformation->phone,
+                ]);
 
                 // Update the initial payment record with the checkout session ID in the transaction_id
                 $initialPayment->update([
@@ -186,6 +206,7 @@ class PaymentController extends Controller
         }
     }
 
+
     public function payForProduct80(Request $request, $requestId)
     {
         // Get the request record using requestId
@@ -203,19 +224,64 @@ class PaymentController extends Controller
             return response()->json(['error' => 'Post not found'], 404);
         }
 
+        // Debugging the postModel and the post price
+        Log::debug('Post Model:', [
+            'post_id' => $postId,
+            'post_price' => $postModel->price,
+        ]);
+
         // Calculate 80% of the product price in centavos (PHP currency)
         $amount = $postModel->price * 0.80 * 100; // Amount in centavos (80% of the total price)
+
+        // Debugging the amount calculation
+        Log::debug('Calculated Amount:', [
+            'calculated_amount' => $amount,
+        ]);
 
         try {
             // Check if the user has already made the initial payment
             $initialPayment = $userRequest->initialPayments()->where('user_id', $userId)->first();
 
+            // If not found for the current user, check for the target_user_id
+            if (!$initialPayment) {
+                $targetUserId = $userRequest->target_user_id;  // Get target_user_id from the request model
+
+                // Log the target_user_id
+                Log::debug('No initial payment found for user. Checking target_user_id:', [
+                    'target_user_id' => $targetUserId,
+                ]);
+
+                // Try to find the initial payment for the target user
+                $initialPayment = $userRequest->initialPayments()->where('user_id', $targetUserId)->first();
+
+                // Log if the payment was found for the target user
+                Log::debug('Initial Payment Found for Target User:', [
+                    'initial_payment_id' => $initialPayment->id ?? null,
+                    'initial_payment_status' => $initialPayment->status ?? 'No status available',
+                ]);
+            }
+
+            // Debugging the status of the initial payment
+            Log::debug('Initial Payment Status Check:', [
+                'initial_payment_id' => $initialPayment->id ?? null, // Log the payment ID to ensure it's retrieved
+                'initial_payment_status' => $initialPayment->status ?? 'No status available', // Log the current status
+            ]);
+
             if (!$initialPayment || $initialPayment->status !== 'initiated') {
+                Log::warning('Initial Payment Not Initiated', [
+                    'initial_payment_id' => $initialPayment->initial_payment_id ?? null,
+                    'current_status' => $initialPayment->status ?? 'No status available',
+                ]);
                 return response()->json(['error' => 'Initial payment not yet completed or initiated'], 400);
             }
 
             // Update the initial payment amount (add 80% to the existing amount)
             $updatedAmount = $initialPayment->amount + ($amount / 100); // Convert centavos to PHP (divide by 100)
+
+            // Debugging the updated amount
+            Log::debug('Updated Amount:', [
+                'updated_amount' => $updatedAmount,
+            ]);
 
             // Update the initial payment with the new 80% amount
             $initialPayment->update([
@@ -253,6 +319,11 @@ class PaymentController extends Controller
                 // Retrieve the checkout URL from PayMongo's response
                 $checkoutUrl = $responseBody['data']['attributes']['checkout_url'];
 
+                // Debugging the checkout URL
+                Log::debug('PayMongo Checkout URL:', [
+                    'checkout_url' => $checkoutUrl,
+                ]);
+
                 return response()->json([
                     'checkout_url' => $checkoutUrl,
                     'message' => 'Checkout link for 80% payment created successfully.',
@@ -266,6 +337,7 @@ class PaymentController extends Controller
             return response()->json(['error' => 'Failed to process the payment'], 500);
         }
     }
+
 
     public function getRequestsWithPayments(HttpRequest $request, $userId)
     {

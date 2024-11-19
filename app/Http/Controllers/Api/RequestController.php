@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use App\Services\TimerService;
 use App\Models\InitialPayment;
 use Illuminate\Support\Facades\Http;
+use GuzzleHttp\Client;
 
 
 
@@ -129,18 +130,76 @@ class RequestController extends Controller
             $userRequest->status = 'declined'; // Update the status
             $userRequest->save();
 
+            // Find the initial payment related to this request
             $payment = InitialPayment::where('request_id', $requestId)->first(); // Find the first matching payment by foreign key
             if ($payment) {
-                $payment->status = 'refunded'; // Update the payment status to 'refunded'
-                $payment->save();
-                Log::info('Updated payment status to refunded for request_id: ' . $requestId);
+                // Check if there's a valid checkout_session_id
+                $checkoutSessionId = $payment->transaction_id;
+                if ($checkoutSessionId) {
+                    // Fetch the checkout session from PayMongo
+                    $client = new \GuzzleHttp\Client();
+                    $response = $client->get("https://api.paymongo.com/v1/checkout_sessions/{$checkoutSessionId}", [
+                        'headers' => [
+                            'Authorization' => 'Basic ' . base64_encode(config('services.paymongo.secret_key') . ':'),
+                        ],
+                    ]);
+
+                    $checkoutSession = json_decode($response->getBody(), true);
+
+                    // Debugging: Log the checkout session response
+                    Log::info('Checkout session response: ' . json_encode($checkoutSession));
+
+                    // Check if the response contains payment_id within the payments array
+                    if (isset($checkoutSession['data']['attributes']['payments'][0]['id'])) {
+                        $paymentId = $checkoutSession['data']['attributes']['payments'][0]['id']; // Extract payment_id
+
+                        // Debugging: Log the extracted payment_id
+                        Log::info('Payment ID extracted: ' . $paymentId);
+
+                        // Create the refund request using the payment ID
+                        $refundResponse = $client->request('POST', 'https://api.paymongo.com/v1/refunds', [
+                            'body' => json_encode([
+                                'data' => [
+                                    'attributes' => [
+                                        'payment_id' => $paymentId, // Use the correct payment_id from checkout session
+                                        'amount' => $payment->amount * 100, // Refund the full amount (in centavos)
+                                        'reason' => 'others',
+                                    ]
+                                ]
+                            ]),
+                            'headers' => [
+                                'Authorization' => 'Basic ' . base64_encode(config('services.paymongo.secret_key') . ':'),
+                                'Content-Type' => 'application/json',
+                                'Accept' => 'application/json',
+                            ]
+                        ]);
+
+                        $refundResult = json_decode($refundResponse->getBody(), true);
+                        if (isset($refundResult['data']['id'])) {
+                            // Refund successful, update the payment status to refunded
+                            $payment->status = 'refunded';
+                            $payment->save();
+                            Log::info('Refund processed successfully for request_id: ' . $requestId);
+                        } else {
+                            Log::error('Refund failed for payment_id: ' . $paymentId);
+                            return response()->json(['error' => 'Refund failed'], 500);
+                        }
+                    } else {
+                        Log::error('Payment ID not found in the checkout session response for request_id: ' . $requestId);
+                        return response()->json(['error' => 'Payment ID not found'], 404);
+                    }
+                } else {
+                    Log::error('Checkout session ID not found for payment related to request_id: ' . $requestId);
+                    return response()->json(['error' => 'Checkout session not found'], 404);
+                }
             } else {
                 Log::error('No InitialPayment found with request_id: ' . $requestId);
-                return response()->json(['error' => 'Payment not found'], 404); // Return error response if payment is not found
+                return response()->json(['error' => 'Payment not found'], 404);
             }
 
+            // Create a notification to notify the original sender about the declined request
             $notification = Notification::create([
-                'content' => $request->user()->username . ' has declined your request.',
+                'content' => $request->user()->username . ' has declined your request, and the PHP amount of ' . number_format($payment->amount, 2) . ' has been successfully refunded.',
                 'status' => 'unread',
                 'user_id' => $userRequest->user_id, // Notify the original sender
                 'target_user_id' => $userRequest->target_user_id,
@@ -150,12 +209,13 @@ class RequestController extends Controller
             Log::info('Declined request: ' . json_encode($notification));
             event(new NotificationEvent($notification)); // Fire event to notify in real-time
 
-            return response()->json(['message' => 'Request declined and sender notified.'], 200);
+            return response()->json(['message' => 'Request declined, payment refunded, and sender notified.'], 200);
         } catch (\Exception $e) {
             Log::error('Error in decline method: ' . $e->getMessage());
             return response()->json(['error' => 'Could not process request'], 500);
         }
     }
+
     public function getAllRequests(Request $request)
     {
         // Get the logged-in user
@@ -200,6 +260,11 @@ class RequestController extends Controller
             }
             Log::debug('Initial Payment:', ['initial_payment' => $initialPayment]);
 
+            // Update the InitialPayment status to "initiated"
+            $initialPayment->status = 'initiated';
+            $initialPayment->save();
+            Log::debug('Initial Payment Status Updated:', ['status' => 'initiated']);
+
             // Check if price is available in the user request, otherwise get from the related post
             $price = $userRequest->price;
 
@@ -221,7 +286,7 @@ class RequestController extends Controller
             $paymentAmount = $price * 0.2;
             Log::debug('Calculated Payment Amount (20%):', ['payment_amount' => $paymentAmount]);
 
-            // Update the payment amount
+            // Update the payment amount in InitialPayment
             $initialPayment->update([
                 'amount' => $paymentAmount,
             ]);

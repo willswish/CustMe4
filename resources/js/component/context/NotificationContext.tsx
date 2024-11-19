@@ -129,7 +129,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
   };
 
-  // User accept request (method updated to match route)
   const userAccept = async (notificationId: number, requestId: number) => {
     try {
         const response = await apiService.post(`/user/accept/${requestId}/${notificationId}`, null, {
@@ -141,12 +140,20 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         const updatedNotification = response.data.notification;
         const checkoutUrl = response.data.checkout_url;
 
+        // Log the updated notification to check the data
+        console.log('Updated Notification:', updatedNotification);
+
         // Update the notifications state with the accepted status and timing data
-        setNotifications((prevNotifications) =>
-            prevNotifications.map((notification) =>
-                notification.id === notificationId ? { ...notification, ...updatedNotification } : notification
-            )
-        );
+        setNotifications((prevNotifications) => {
+            // Log previous notifications for debugging
+            console.log('Previous Notifications:', prevNotifications);
+
+            return prevNotifications.map((notification) =>
+                notification.id === notificationId
+                    ? { ...notification, ...updatedNotification, status: 'accepted' }
+                    : notification
+            );
+        });
 
         // Open the PayMongo checkout URL in a new window
         if (checkoutUrl) {
@@ -156,6 +163,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         console.error('Error accepting user notification:', error);
     }
 };
+
 
   // User decline request (method updated to match route)
   const userDecline = async (notificationId: number, requestId: number) => {

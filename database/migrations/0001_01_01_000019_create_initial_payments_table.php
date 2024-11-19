@@ -22,6 +22,7 @@
                 $table->string('transaction_id')->nullable(); // Transaction ID from payment provider
                 $table->string('payment_method')->nullable(); // Payment method used
 
+
                 $table->timestamps();
             });
         }
