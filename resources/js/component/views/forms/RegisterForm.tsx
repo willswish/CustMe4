@@ -168,12 +168,12 @@ const RegisterForm = () => {
             Register Your Account
           </Typography>
 
-          <Box display="flex" justifyContent="space-between" mb={2}>
+          {/* <Box display="flex" justifyContent="space-between" mb={2}>
             <Button variant="contained" startIcon={<Google />} className="bg-red-600 text-white w-[48%]">Google</Button>
             <Button variant="contained" startIcon={<Facebook />} className="bg-blue-700 text-white w-[48%]">Facebook</Button>
           </Box>
 
-          <Typography className="text-center text-gray-500 mb-4">OR</Typography>
+          <Typography className="text-center text-gray-500 mb-4">OR</Typography> */}
 
           <form onSubmit={handleSubmit}>
             <Box mb={3} display="flex" gap={2}>

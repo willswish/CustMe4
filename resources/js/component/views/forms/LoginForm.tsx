@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { Google as GoogleIcon, Facebook as FacebookIcon } from '@mui/icons-material';
 import { CircularProgress, TextField, Button } from '@mui/material';
 
 const LoginForm = () => {
@@ -79,38 +78,17 @@ const LoginForm = () => {
   return (
     <div className="max-w-md w-full p-8 rounded-lg shadow-lg bg-white mx-auto mt-10">
       <div className="text-black font-extrabold text-4xl text-center">
-                        <span className="text-blue-500">C</span>
-                        <span className="text-blue-500">u</span>
-                        <span className="text-blue-500">s</span>
-                        <span className="text-yellow-500">t</span>
-                        <span className="text-blue-500">M</span>
-                        <span className="text-yellow-500">e</span>
-                    </div>
+        <span className="text-blue-500">C</span>
+        <span className="text-blue-500">u</span>
+        <span className="text-blue-500">s</span>
+        <span className="text-yellow-500">t</span>
+        <span className="text-blue-500">M</span>
+        <span className="text-yellow-500">e</span>
+      </div>
       <p className="text-center text-gray-600 mb-6">
         Connect with designers and printing providers
       </p>
 
-      {/* Social Login Buttons */}
-      <div className="flex justify-between mb-6">
-        <Button
-          variant="contained"
-          startIcon={<GoogleIcon />}
-          className="bg-red-600 text-white w-[48%] p-2 rounded-lg"
-        >
-          Google
-        </Button>
-        <Button
-          variant="contained"
-          startIcon={<FacebookIcon />}
-          className="bg-blue-700 text-white w-[48%] p-2 rounded-lg"
-        >
-          Facebook
-        </Button>
-      </div>
-
-      <p className="text-center text-gray-500 mb-4">OR</p>
-
-      {/* Login Form */}
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <TextField

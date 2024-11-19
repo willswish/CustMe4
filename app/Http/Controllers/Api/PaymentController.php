@@ -269,7 +269,7 @@ class PaymentController extends Controller
 
             if (!$initialPayment || $initialPayment->status !== 'initiated') {
                 Log::warning('Initial Payment Not Initiated', [
-                    'initial_payment_id' => $initialPayment->initial_payment_id ?? null,
+                    'initial_payment_id' => $initialPayment->id ?? null,
                     'current_status' => $initialPayment->status ?? 'No status available',
                 ]);
                 return response()->json(['error' => 'Initial payment not yet completed or initiated'], 400);

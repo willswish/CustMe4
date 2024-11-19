@@ -169,7 +169,16 @@ const Header: React.FC<HeaderProps> = ({ onLocationSelect }) => {
           {/* List of Icons */}
           <List sx={{ mt: 3 }}>
             {/* Dashboard */}
-            <NavLink to="/List-of-Desinger&Printing-Provider" className="text-white">
+            {/* <NavLink to="/List-of-Desinger&Printing-Provider" className="text-white">
+              <ListItem>
+                <ListItemIcon sx={{ color: 'white' }}>
+                  <DashboardIcon />
+                </ListItemIcon>
+                {isSidebarExpanded && <ListItemText primary="Dashboard" />}
+              </ListItem>
+            </NavLink> */}
+          {isUserRole() && (  
+            <NavLink to="/dashboard" className="text-white">
               <ListItem>
                 <ListItemIcon sx={{ color: 'white' }}>
                   <DashboardIcon />
@@ -177,6 +186,7 @@ const Header: React.FC<HeaderProps> = ({ onLocationSelect }) => {
                 {isSidebarExpanded && <ListItemText primary="Dashboard" />}
               </ListItem>
             </NavLink>
+              )}
 
         {isMultipleRole() && (   
            <NavLink to="/paymentstable" className="text-white">
@@ -198,16 +208,7 @@ const Header: React.FC<HeaderProps> = ({ onLocationSelect }) => {
               </ListItem>
             </NavLink>
 
-            {isUserRole() && (  
-            <NavLink to="/providerdesigner" className="text-white">
-              <ListItem>
-                <ListItemIcon sx={{ color: 'white' }}>
-                  <BrushIcon />
-                </ListItemIcon>
-                {isSidebarExpanded && <ListItemText primary="Designer" />}
-              </ListItem>
-            </NavLink>
-              )}
+        
       {isDesingerOrProviderRole () && (   
             <NavLink to="/clientpost" className="text-white">
               <ListItem>

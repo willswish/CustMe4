@@ -76,7 +76,7 @@ const AppRoutes = () => {
 
       {/* Routes accessible by multiple roles */}
       <Route element={<ProtectedRoutes roles={['Admin', 'User', 'Graphic Designer', 'Printing Shop']} />}>
-        <Route path="/providerdesigner" element={<DisplayForm />} />
+        <Route path="/dashboard" element={<DisplayForm />} />
         <Route path="/posts/:postId" element={<EditPostForm />} />
         <Route path="/chat/:userId" element={<ChatForm />} />
         <Route path="/chats" element={<ChatForm />} />
