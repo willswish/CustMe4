@@ -65,7 +65,7 @@ class PostController extends Controller
         }
     }
 
-    public function index(Request $request)
+    public function indes(Request $request)
     {
         $posts = Post::with('user', 'images')->paginate($request->limit);
         return response()->json([
@@ -186,13 +186,26 @@ class PostController extends Controller
     }
 
     public function getPosts(Request $request)
-    {
-        $posts = Post::select('id', 'title', 'content', 'image', 'created_at')
-            ->where('user_id', $request->user_id)
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
-        return response()->json($posts);
-    }
+{
+    $posts = Post::select(
+            'post_id', 
+            'title',
+            'content',
+            'image',
+            'created_at'
+        )
+        ->where('user_id', $request->user_id)
+        ->orderBy('created_at', 'desc')
+        ->paginate(10);
+
+    return response()->json($posts);
+}
+
+public function index()
+{
+    $posts = Post::all(); // Fetch all posts
+    return response()->json($posts); // Return as JSON
+}
 
     public function getUserImages()
     {

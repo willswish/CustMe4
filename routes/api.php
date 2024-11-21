@@ -96,7 +96,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 });
 
-Route::get('/api/posts', [PostController::class, 'getPosts']);
+Route::get('/posts/{post_id}', [PostController::class, 'getPost']);
+Route::delete('/posts/{post_id}', [PostController::class, 'deletePost']);
+Route::get('/user/{user_id}/posts', [PostController::class, 'getPosts']);
+Route::get('/posts', [PostController::class, 'index']);
+
 
 
 
