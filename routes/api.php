@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\PayMongoWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Broadcast;
+use App\Models\Post;
 
 
 
@@ -95,7 +96,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 });
 
-
+Route::get('/api/posts', [PostController::class, 'getPosts']);
 
 
 

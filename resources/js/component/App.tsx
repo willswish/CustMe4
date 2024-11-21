@@ -17,12 +17,11 @@ import { PaymentProvider } from './context/PaymentContext';
 import { AdminPaymentProvider } from './context/AdminPaymentContext';
 import { BalanceRequestProvider } from './context/BalanceRequestContext';
 
-
 const App = () => {
     return (
         <BrowserRouter>
             <AuthProvider>
-                <PostProvider>
+                <PostProvider> {/* PostProvider correctly wrapped here */}
                     <RequestProvider>
                         <NotificationProvider>
                             <UserProfileProvider>
@@ -32,16 +31,15 @@ const App = () => {
                                             <ClientProfileProvider>
                                                 <SearchProvider>
                                                     <DesignerProvider>
-                                                    <ArtistAndProviderProvider>
-                                                    <PaymentProvider>
-                                                        <AdminPaymentProvider>
-                                                            <BalanceRequestProvider>
-                                                        <Routes />
-                                                        </BalanceRequestProvider>
-                                                        
-                                                        </AdminPaymentProvider>
-                                                    </PaymentProvider>
-                                                   </ArtistAndProviderProvider>
+                                                        <ArtistAndProviderProvider>
+                                                            <PaymentProvider>
+                                                                <AdminPaymentProvider>
+                                                                    <BalanceRequestProvider>
+                                                                        <Routes />  {/* Routes should be within the providers */}
+                                                                    </BalanceRequestProvider>
+                                                                </AdminPaymentProvider>
+                                                            </PaymentProvider>
+                                                        </ArtistAndProviderProvider>
                                                     </DesignerProvider>
                                                 </SearchProvider>
                                             </ClientProfileProvider>
